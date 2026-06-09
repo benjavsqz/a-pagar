@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from '@/components/ui/toast'
+import { PwaInstallBanner } from '@/components/pwa-install-banner'
 import './globals.css'
 
 const inter = Inter({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col bg-[#080809] text-[#f0f0f2] antialiased font-sans">
         {children}
         <Toaster />
+        <PwaInstallBanner />
       </body>
     </html>
   )

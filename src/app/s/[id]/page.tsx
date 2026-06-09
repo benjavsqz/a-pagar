@@ -1,6 +1,7 @@
 'use client'
 import { use, useState, useRef, useEffect } from 'react'
 import { useSession } from '@/hooks/use-session'
+import { usePush } from '@/hooks/use-push'
 import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/utils'
 import { saveLocalSession, getLocalSession } from '@/lib/local-sessions'
 import type { Participant } from '@/types'
@@ -27,6 +28,13 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
   const [creating, setCreating] = useState(false)
   const [uploadingComprobante, setUploadingComprobante] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Subscribe to push notifications once we know who the participant is
+  usePush({
+    sessionId: id,
+    participantId: me?.id,
+    role: 'participant',
+  })
 
   // Restore participant from localStorage if returning
   useEffect(() => {
@@ -377,6 +385,20 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           paid_at: new Date().toISOString(),
         })
         toast('Comprobante enviado ✓')
+        // Notify host
+        fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: id,
+            event: 'payment_received',
+            payload: {
+              participantName: me.name,
+              amount: formatCLP(myTotal),
+              url: `/host/${id}`,
+            },
+          }),
+        }).catch(() => {})
         setStep('done')
       } catch (err) {
         console.error(err)
@@ -396,6 +418,20 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           amount: myTotal,
           paid_at: new Date().toISOString(),
         })
+        // Notify host
+        fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: id,
+            event: 'payment_received',
+            payload: {
+              participantName: me.name,
+              amount: formatCLP(myTotal),
+              url: `/host/${id}`,
+            },
+          }),
+        }).catch(() => {})
         setStep('done')
       } catch {
         toast('Error al registrar pago', 'error')

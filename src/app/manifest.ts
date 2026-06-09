@@ -7,9 +7,35 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Sube la foto de la boleta, comparte el link y cada uno paga su parte. Sin apps.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#0a0a0a',
-    theme_color: '#0a0a0a',
+    background_color: '#080809',
+    theme_color: '#080809',
     orientation: 'portrait',
     categories: ['finance', 'utilities'],
+    icons: [
+      {
+        src: '/icon',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/icon',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/apple-icon',
+        sizes: '180x180',
+        type: 'image/png',
+      },
+    ],
+    screenshots: [
+      {
+        src: '/icon',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
   }
 }

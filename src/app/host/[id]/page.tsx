@@ -1,6 +1,7 @@
 'use client'
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import { useSession } from '@/hooks/use-session'
+import { usePush } from '@/hooks/use-push'
 import { computeParticipantSummary, formatCLP, generateSessionLink, copyToClipboard } from '@/lib/utils'
 import { saveLocalSession } from '@/lib/local-sessions'
 import { toast, Toaster } from '@/components/ui/toast'
@@ -17,6 +18,24 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   const { data, loading, error, confirmPayment } = useSession(id)
   const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
+  const prevPaymentCount = useRef(0)
+
+  // Subscribe to push notifications as host
+  usePush({ sessionId: id, role: 'host' })
+
+  // Notify host when payment count increases
+  useEffect(() => {
+    if (!data) return
+    const newCount = data.payments.length
+    if (prevPaymentCount.current > 0 && newCount > prevPaymentCount.current) {
+      const latest = data.payments[data.payments.length - 1]
+      const participant = data.participants.find(p => p.id === latest?.participant_id)
+      if (participant) {
+        toast(`💸 ${participant.name} transfirió ${formatCLP(latest.amount)}`)
+      }
+    }
+    prevPaymentCount.current = newCount
+  }, [data])
 
   // Save to localStorage when host visits their own session
   useEffect(() => {
@@ -44,6 +63,30 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     setCopiedLink(true)
     toast('Link copiado 👍')
     setTimeout(() => setCopiedLink(false), 2000)
+  }
+
+  const handleConfirmPayment = async (participantId: string) => {
+    await confirmPayment(participantId)
+    // Send push to participant
+    const participant = participants.find(p => p.id === participantId)
+    const paymentRec = payments.find(p => p.participant_id === participantId)
+    if (participant) {
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: id,
+          event: 'payment_confirmed',
+          payload: {
+            participantId,
+            participantName: participant.name,
+            hostName: session.host_name,
+            amount: formatCLP(paymentRec?.amount ?? 0),
+            url: `/s/${id}`,
+          },
+        }),
+      }).catch(() => {})
+    }
   }
 
   const handleShareWhatsApp = () => {
@@ -213,7 +256,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
                     payment={payment}
                     expanded={expandedParticipant === p.id}
                     onToggle={() => setExpandedParticipant(expandedParticipant === p.id ? null : p.id)}
-                    onConfirm={() => confirmPayment(p.id)}
+                    onConfirm={() => handleConfirmPayment(p.id)}
                   />
                 )
               })
@@ -226,7 +269,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
                   onToggle={() =>
                     setExpandedParticipant(expandedParticipant === s.participant.id ? null : s.participant.id)
                   }
-                  onConfirm={() => confirmPayment(s.participant.id)}
+                  onConfirm={() => handleConfirmPayment(s.participant.id)}
                 />
               ))
           }
