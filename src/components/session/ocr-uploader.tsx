@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Camera, Upload, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Camera, ImageIcon, Upload, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { compressImage } from '@/lib/compress-image'
 
 interface DraftItem { name: string; price: string }
@@ -32,6 +32,7 @@ const STATUS_MESSAGES: Record<Status, string> = {
 
 export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [detectedCount, setDetectedCount] = useState(0)
@@ -94,13 +95,13 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
     setPreview(null)
     setStatus('idle')
     setErrorMsg('')
-    setTimeout(() => inputRef.current?.click(), 50)
   }
 
   const isProcessing = status === 'compressing' || status === 'processing' || status === 'retrying'
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Camera input — opens directly to camera */}
       <input
         ref={inputRef}
         type="file"
@@ -109,21 +110,41 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
         className="hidden"
         onChange={handleFile}
       />
+      {/* Gallery input — opens file picker / photo library */}
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFile}
+      />
 
       {/* Upload zone */}
       {!preview ? (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="w-full h-48 bg-[#111113] border-2 border-dashed border-[#222226] rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-[#00DF76]/40 hover:bg-[#111113]/80 transition-all active:scale-[0.98]"
-        >
-          <div className="w-14 h-14 rounded-full bg-[#18181b] flex items-center justify-center">
-            <Camera className="w-7 h-7 text-[#00DF76]" />
+        <div className="flex flex-col gap-2">
+          {/* Two buttons side by side */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => inputRef.current?.click()}
+              className="h-28 bg-[#111113] border-2 border-dashed border-[#222226] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#00DF76]/40 active:scale-[0.97] transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-[#18181b] flex items-center justify-center">
+                <Camera className="w-5 h-5 text-[#00DF76]" />
+              </div>
+              <p className="text-xs font-semibold">Tomar foto</p>
+            </button>
+            <button
+              onClick={() => galleryRef.current?.click()}
+              className="h-28 bg-[#111113] border-2 border-dashed border-[#222226] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#00DF76]/40 active:scale-[0.97] transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-[#18181b] flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-[#00DF76]" />
+              </div>
+              <p className="text-xs font-semibold">Desde galería</p>
+            </button>
           </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold">Sacar foto o subir imagen</p>
-            <p className="text-xs text-[#8a8a96] mt-0.5">Apunta al total de la boleta</p>
-          </div>
-        </button>
+          <p className="text-xs text-[#4a4a54] text-center">Apunta bien al total de la boleta</p>
+        </div>
       ) : (
         <div className="relative w-full rounded-2xl overflow-hidden bg-[#111113] border border-[#222226]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
