@@ -1,78 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const PROMPT = `Analiza esta imagen de una boleta o ticket de restaurante chileno.
+const PROMPT = `Analiza esta imagen de una boleta o ticket (chileno o latinoamericano).
 Tu objetivo es extraer TODOS los ítems de comida y bebida con sus precios.
 
-FORMATO DE RESPUESTA — devuelve UNICAMENTE este JSON (sin markdown, sin texto extra):
-{"subtotal": 269600, "items": [{"name": "...", "price": 19800, "quantity": 2}]}
+FORMATO DE RESPUESTA — devuelve ÚNICAMENTE este JSON (sin markdown, sin texto extra):
+{"subtotal": 67750, "items": [{"name": "...", "price": 14400, "quantity": 2}]}
 
-Donde "subtotal" es el total de los ítems visibles. Busca en este orden de prioridad:
-1. "Consumo Cliente" o "Consumo" (lo que pagó este cliente)
-2. "SubTotal" o "Sub Total"
-3. "Total Consumo"
-4. "Total General Mesa" (solo si no hay ninguna de las anteriores)
-Si no encuentras ninguna referencia, usa null.
+"subtotal" = el total de los ítems (SUBTOTAL o TOTAL sin propina). Busca en este orden:
+1. "Consumo Cliente" o "Consumo"
+2. "SUBTOTAL" o "Sub Total" o "Sub-Total"
+3. "TOTAL" (cuando coincide con la suma de ítems, sin propina)
+4. "Total Consumo" / "Total General Mesa"
+Si no encuentras ninguna, usa null.
 
-─── REGLAS DE INCLUSION / EXCLUSION ────────────────────────────────────────
+─── BOLETAS TIPO "CANT / PRODUCTO / PRECIO / VALOR" (muy comunes en Chile) ────
 
-INCLUYE: platos, bebidas, tragos, postres, entradas, aperitivos, jugos, aguas
+Muchos restaurantes chilenos usan 4 columnas:
+  Cant   Producto        Precio   Valor
+  2      CROQUETAS       $7200    $14400
+  3      COCA ZERO       $2450    $7350
+  1      LOMO VETADO.    $9300    $9300
+
+  IMPORTANTE: usa siempre la columna "VALOR" (última columna = total de la línea)
+  como "price" en tu JSON. NUNCA uses la columna "Precio" (precio unitario).
+  "price" debe ser el TOTAL de la línea = Precio × Cantidad.
+
+  Ejemplos CORRECTOS para este formato:
+    "2  CROQUETAS  $7200  $14400" → {"name":"CROQUETAS", "price":14400, "quantity":2}
+    "3  COCA ZERO  $2450  $7350"  → {"name":"COCA ZERO",  "price":7350,  "quantity":3}
+    "1  LOMO VET.  $9300  $9300"  → {"name":"LOMO VETADO","price":9300,  "quantity":1}
+
+─── BOLETAS TIPO "CANTIDAD × NOMBRE — PRECIO TOTAL" (un solo precio por línea) ─
+
+  "2  Pisco Sour           19.800" → {"price":19800, "quantity":2}
+  "3  Cerveza              12.000" → {"price":12000, "quantity":3}
+  "   Limonada Jengibre     9.800" → {"price":9800,  "quantity":1}
+
+─── REGLAS DE INCLUSIÓN / EXCLUSIÓN ─────────────────────────────────────────
+
+INCLUYE: platos, bebidas, tragos, postres, entradas, aperitivos, jugos, aguas, extras
+         con precio > 0 (ej: "+Agregado Pollo $1.100")
 EXCLUYE sin excepción:
-  - Líneas de SubTotal, Total, TOTAL, Propina, Servicio, IVA, Descuento, Vuelto, Cubierto
-  - Datos del local: RUT, folio, mesa, garzón, fecha, hora, dirección
-  - Modificadores con precio 0: líneas que empiecen con "+" y tengan precio 0
-Si un modificador tiene precio propio (ej: "+Agrandar $1.500"), inclúyelo como ítem separado.
+  - Subtotal, Total, TOTAL, Propina, Servicio, IVA, Descuento, Neto, Vuelto, Cubierto
+  - Datos del local: RUT, folio, mesa, garzón/mesero, fecha, hora, dirección
+  - Líneas con precio $0 o que sean modificadores sin costo
 
-─── FORMATO DE PRECIOS (SISTEMA CHILENO) ────────────────────────────────────
+─── BOLETAS DE TERMINAL (GETNET, TRANSBANK, etc.) ───────────────────────────
 
-El PUNTO separa MILES, NO es decimal:
-  "12.990" = 12990 pesos | "5.800" = 5800 pesos | "47.800" = 47800 pesos
-Convierte siempre a entero sin puntos.
+Si la imagen es solo el comprobante del terminal de pago (muestra "Monto", "Propina",
+"Total" pero NO lista ítems individuales), devuelve: {"subtotal": MONTO, "items": []}
+donde MONTO es el campo "Monto" (sin propina).
 
-─── CANTIDADES ───────────────────────────────────────────────────────────────
+─── FORMATO DE PRECIOS CHILENO ──────────────────────────────────────────────
 
-"price" = el PRECIO TOTAL de esa línea exactamente como aparece en la boleta.
-"quantity" = el número que aparece al INICIO de la línea (antes del nombre del ítem).
+El PUNTO es separador de MILES, NO decimal:
+  "$8.500" = 8500  |  "$14.400" = 14400  |  "$84.400" = 84400
+  "$8500"  = 8500  |  "$14400"  = 14400  (sin punto también válido)
+Convierte siempre a entero sin puntos ni símbolo $.
 
-Ejemplos CORRECTOS:
-  "2  Pisco Sour             19.800" → {"price": 19800, "quantity": 2}
-  "3  Cerveza                12.000" → {"price": 12000, "quantity": 3}
-  "   Limonada Jengibre       9.800" → {"price": 9800,  "quantity": 1}
-  "2  Big Famous Ribs        47.800" → {"price": 47800, "quantity": 2}
-  "1  Mix & Match Fajitas (2 Proteínas) 18.900" → {"price": 18900, "quantity": 1}
+─── REGLA CRÍTICA — cantidad ────────────────────────────────────────────────
 
-REGLA CRÍTICA — cantidad:
-  - Solo el número al INICIO de la línea (en la columna CANT) es la cantidad.
-  - Si no hay número al inicio de la línea del ítem, quantity = 1.
+"quantity" = el número en la columna CANT al inicio de la línea.
+  - Si no hay número al inicio, quantity = 1.
   - NUNCA heredes la cantidad de la línea anterior.
-  - Números DENTRO del nombre NO son cantidad: "(2 Proteínas)", "(3 Proteínas)", "x2", etc.
+  - Números DENTRO del nombre NO son cantidad: "(2 Proteínas)", "x2", "500cc", etc.
 
-─── ÍTEMS CON NOMBRE LARGO (BOLETAS TÉRMICAS) ───────────────────────────────
+─── ÍTEMS CON NOMBRE LARGO (boletas térmicas) ───────────────────────────────
 
-Las impresoras térmicas cortan líneas largas. Cuando el nombre de un ítem no cabe en
-una línea, continúa en la siguiente. Reconoce el ítem completo aunque esté partido:
-
-  Ejemplo 1 — nombre partido con guión:
-    "1  Mix & Match Fajitas (2 Pro-"
-    "   teínas)              18.900"
-  → Un solo ítem: "Mix & Match Fajitas (2 Proteínas)" precio=18900, quantity=1
-
-  Ejemplo 2 — precio en línea aparte:
-    "2  Bacon Ranch Quesadilla de Car-"
-    "   ne                   29.200"
-  → Un solo ítem: "Bacon Ranch Quesadilla de Carne" precio=29200, quantity=2
-
-  Ejemplo 3 — precio cortado:
-    "   Big Mix & Match Ribs  23.90"
-    "   0"
-  → Un solo ítem: "Big Mix & Match Ribs" precio=23900 (los dígitos cortados se concatenan)
+Las impresoras térmicas cortan líneas largas. Une el ítem aunque esté partido:
+  "2  Bacon Ranch Quesadilla de Car-"
+  "   ne                   29.200"
+  → {"name":"Bacon Ranch Quesadilla de Carne", "price":29200, "quantity":2}
 
 ─── AUTOVALIDACIÓN OBLIGATORIA ──────────────────────────────────────────────
 
-Después de listar los ítems, suma internamente todos sus precios.
-Compara esa suma con el SubTotal que ves en la boleta.
-Si la diferencia es mayor a 500 pesos, REVISA la imagen nuevamente y busca el o los
-ítems que te faltó incluir. Ajusta tu respuesta antes de devolverla.
+Suma internamente todos los "price" de tus ítems.
+Compara con el SUBTOTAL visible en la boleta.
+Si la diferencia es mayor a 500 pesos (o 2% del subtotal), REVISA y agrega los
+ítems faltantes antes de responder.
 
 ─── FORMATO FINAL ────────────────────────────────────────────────────────────
 

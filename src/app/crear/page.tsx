@@ -152,7 +152,8 @@ export default function CrearPage() {
         .select()
         .single()
 
-      if (sessionErr || !session) throw sessionErr
+      if (sessionErr) throw new Error(sessionErr.message)
+      if (!session) throw new Error('No se pudo crear la sesión')
 
       const dbItems: Array<{ session_id: string; name: string; price: number; position: number }> = []
       let pos = 0
@@ -163,7 +164,7 @@ export default function CrearPage() {
         }
       }
       const { error: itemsErr } = await supabase.from('items').insert(dbItems)
-      if (itemsErr) throw itemsErr
+      if (itemsErr) throw new Error(itemsErr.message)
 
       saveLocalSession({
         id: session.id,
@@ -176,8 +177,9 @@ export default function CrearPage() {
 
       router.push(`/host/${session.id}`)
     } catch (err) {
-      console.error(err)
-      toast('Error al crear la sesión', 'error')
+      console.error('handleCreateItems error:', err)
+      const msg = err instanceof Error ? err.message : (typeof err === 'object' && err !== null && 'message' in err ? (err as { message: string }).message : String(err))
+      toast(msg || 'Error al crear la sesión', 'error')
     } finally {
       setLoading(false)
     }
@@ -211,7 +213,8 @@ export default function CrearPage() {
         .select()
         .single()
 
-      if (sessionErr || !session) throw sessionErr
+      if (sessionErr) throw new Error(sessionErr.message)
+      if (!session) throw new Error('No se pudo crear la sesión')
 
       saveLocalSession({
         id: session.id,
@@ -224,8 +227,9 @@ export default function CrearPage() {
 
       router.push(`/host/${session.id}`)
     } catch (err) {
-      console.error(err)
-      toast('Error al crear la sesión', 'error')
+      console.error('handleCreateEqual error:', err)
+      const msg = err instanceof Error ? err.message : (typeof err === 'object' && err !== null && 'message' in err ? (err as { message: string }).message : String(err))
+      toast(msg || 'Error al crear la sesión', 'error')
     } finally {
       setLoading(false)
     }
@@ -390,12 +394,6 @@ export default function CrearPage() {
                 <button onClick={addItem} className="flex items-center gap-1 text-xs text-[#00DF76] hover:text-[#00b868] transition-colors">
                   <Plus className="w-3.5 h-3.5" /> Agregar
                 </button>
-              </div>
-              <div className="flex items-center gap-2 px-1">
-                <span className="w-[88px] text-center text-[10px] text-[#4a4a54] uppercase tracking-wider shrink-0">Cant.</span>
-                <span className="flex-1 text-[10px] text-[#4a4a54] uppercase tracking-wider">Ítem</span>
-                <span className="w-24 text-[10px] text-[#4a4a54] uppercase tracking-wider">Precio u.</span>
-                <span className="w-8" />
               </div>
               {items.map((item, idx) => (
                 <ItemRow
@@ -638,7 +636,7 @@ function HostDataForm({
   hint?: string
 }) {
   return (
-    <div className="flex-1 flex flex-col gap-4">
+    <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-8">
       <p className="text-sm text-[#8a8a96] leading-relaxed">
         {hint ?? 'Tus datos de transferencia aparecerán para que los demás sepan a dónde pagarte.'}
       </p>
@@ -667,7 +665,7 @@ function HostDataForm({
         onChange={e => setHostRut(formatRut(e.target.value))}
         inputMode="numeric"
       />
-      <Button fullWidth loading={loading} onClick={onSubmit} className="mt-auto">
+      <Button fullWidth loading={loading} onClick={onSubmit}>
         {submitLabel}
       </Button>
     </div>
