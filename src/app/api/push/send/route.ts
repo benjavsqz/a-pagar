@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createClient } from '@/lib/supabase/server'
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  // Initialize VAPID at runtime so env vars are available
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  )
   try {
     const { sessionId, event, payload } = await req.json()
     // event: 'payment_received' | 'payment_confirmed'
