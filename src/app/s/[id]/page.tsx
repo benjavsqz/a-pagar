@@ -354,12 +354,19 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
       toast(`${label} copiado 👍`)
     }
 
+    // Parse combined "Banco · Tipo de cuenta" stored in host_bank
+    const bankStr = session.host_bank ?? null
+    const hasCombined = bankStr?.includes(' · ')
+    const bankName = hasCombined ? bankStr!.split(' · ')[0] : bankStr
+    const accountType = hasCombined ? bankStr!.split(' · ')[1] : null
+
     const handleCopyAll = () => {
       const lines = [
         session.host_name && `Nombre: ${session.host_name}`,
-        session.host_bank && `Banco: ${session.host_bank}`,
+        bankName && `Banco: ${bankName}`,
+        accountType && `Tipo de cuenta: ${accountType}`,
         session.host_rut && `RUT: ${session.host_rut}`,
-        session.host_account && `Cuenta: ${session.host_account}`,
+        session.host_account && `Nro de cuenta: ${session.host_account}`,
         `Monto: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(myTotal)}`,
       ].filter(Boolean).join('\n')
       copyToClipboard(lines)
@@ -482,9 +489,10 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           </div>
           {[
             { label: 'Nombre', value: session.host_name },
-            { label: 'Banco', value: session.host_bank },
+            { label: 'Banco', value: bankName },
+            { label: 'Tipo de cuenta', value: accountType },
             { label: 'RUT', value: session.host_rut },
-            { label: 'Cuenta', value: session.host_account },
+            { label: 'Nro de cuenta', value: session.host_account },
           ].filter(d => d.value).map(({ label, value }) => (
             <button
               key={label}

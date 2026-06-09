@@ -11,11 +11,27 @@ import { OcrUploader } from '@/components/session/ocr-uploader'
 import { formatCLP, formatRut } from '@/lib/utils'
 import { saveLocalSession } from '@/lib/local-sessions'
 import type { Item } from '@/types'
+import { SelectField } from '@/components/ui/select-field'
 import {
   Plus, ArrowRight, ChevronLeft, Check, ChevronDown, ChevronUp,
   ScanLine, Users,
 } from 'lucide-react'
 import Link from 'next/link'
+
+const BANKS = [
+  'Banco Estado', 'Banco de Chile', 'BCI', 'Santander', 'BBVA', 'Itaú',
+  'Scotiabank', 'Banco Security', 'BICE', 'Banco Consorcio', 'Banco Internacional',
+  'Falabella', 'Banco Ripley', 'Coopeuch', 'Mercado Pago', 'MACH', 'Tenpo', 'Otro',
+].map(b => ({ value: b, label: b }))
+
+const ACCOUNT_TYPES = [
+  { value: 'Cuenta Corriente', label: 'Cuenta Corriente' },
+  { value: 'Cuenta Vista', label: 'Cuenta Vista' },
+  { value: 'Cuenta RUT', label: 'Cuenta RUT (BancoEstado)' },
+  { value: 'Cuenta de Ahorro', label: 'Cuenta de Ahorro' },
+  { value: 'Cuenta Digital', label: 'Cuenta Digital (MACH, Mercado Pago…)' },
+  { value: 'Otro', label: 'Otro' },
+]
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -101,6 +117,7 @@ export default function CrearPage() {
   // --- Shared host data ---
   const [hostName, setHostName] = useState('')
   const [hostBank, setHostBank] = useState('')
+  const [hostAccountType, setHostAccountType] = useState('')
   const [hostAccount, setHostAccount] = useState('')
   const [hostRut, setHostRut] = useState('')
   const [loading, setLoading] = useState(false)
@@ -144,7 +161,7 @@ export default function CrearPage() {
           restaurant_name: restaurantName.trim() || null,
           propina_pct: propina,
           host_name: hostName.trim(),
-          host_bank: hostBank.trim() || null,
+          host_bank: hostBank && hostAccountType ? `${hostBank} · ${hostAccountType}` : (hostBank.trim() || null),
           host_account: hostAccount.trim() || null,
           host_rut: hostRut.trim() || null,
           split_mode: 'items',
@@ -203,7 +220,7 @@ export default function CrearPage() {
           restaurant_name: equalRestaurant.trim() || null,
           propina_pct: 0,
           host_name: hostName.trim(),
-          host_bank: hostBank.trim() || null,
+          host_bank: hostBank && hostAccountType ? `${hostBank} · ${hostAccountType}` : (hostBank.trim() || null),
           host_account: hostAccount.trim() || null,
           host_rut: hostRut.trim() || null,
           split_mode: 'equal',
@@ -476,6 +493,7 @@ export default function CrearPage() {
           <HostDataForm
             hostName={hostName} setHostName={setHostName}
             hostBank={hostBank} setHostBank={setHostBank}
+            hostAccountType={hostAccountType} setHostAccountType={setHostAccountType}
             hostAccount={hostAccount} setHostAccount={setHostAccount}
             hostRut={hostRut} setHostRut={setHostRut}
             loading={loading}
@@ -605,6 +623,7 @@ export default function CrearPage() {
         <HostDataForm
           hostName={hostName} setHostName={setHostName}
           hostBank={hostBank} setHostBank={setHostBank}
+          hostAccountType={hostAccountType} setHostAccountType={setHostAccountType}
           hostAccount={hostAccount} setHostAccount={setHostAccount}
           hostRut={hostRut} setHostRut={setHostRut}
           loading={loading}
@@ -622,12 +641,14 @@ export default function CrearPage() {
 function HostDataForm({
   hostName, setHostName,
   hostBank, setHostBank,
+  hostAccountType, setHostAccountType,
   hostAccount, setHostAccount,
   hostRut, setHostRut,
   loading, onSubmit, submitLabel, hint,
 }: {
   hostName: string; setHostName: (v: string) => void
   hostBank: string; setHostBank: (v: string) => void
+  hostAccountType: string; setHostAccountType: (v: string) => void
   hostAccount: string; setHostAccount: (v: string) => void
   hostRut: string; setHostRut: (v: string) => void
   loading: boolean
@@ -640,24 +661,38 @@ function HostDataForm({
       <p className="text-sm text-[#8a8a96] leading-relaxed">
         {hint ?? 'Tus datos de transferencia aparecerán para que los demás sepan a dónde pagarte.'}
       </p>
+
       <Input
         label="Tu nombre *"
         placeholder="Ej: Benja, Cami..."
         value={hostName}
         onChange={e => setHostName(e.target.value)}
       />
-      <Input
+
+      <SelectField
         label="Banco"
-        placeholder="Ej: Banco Chile, BCI, Mercado Pago..."
         value={hostBank}
-        onChange={e => setHostBank(e.target.value)}
+        onChange={setHostBank}
+        placeholder="Selecciona tu banco"
+        options={BANKS}
       />
+
+      <SelectField
+        label="Tipo de cuenta"
+        value={hostAccountType}
+        onChange={setHostAccountType}
+        placeholder="Selecciona el tipo"
+        options={ACCOUNT_TYPES}
+      />
+
       <Input
-        label="Número de cuenta / RUT Empresa"
-        placeholder="Ej: 1234567890"
+        label="Nro de cuenta"
+        placeholder="Ej: 19438685"
         value={hostAccount}
         onChange={e => setHostAccount(e.target.value)}
+        inputMode="numeric"
       />
+
       <Input
         label="RUT"
         placeholder="12.345.678-9"
@@ -665,6 +700,7 @@ function HostDataForm({
         onChange={e => setHostRut(formatRut(e.target.value))}
         inputMode="numeric"
       />
+
       <Button fullWidth loading={loading} onClick={onSubmit}>
         {submitLabel}
       </Button>
