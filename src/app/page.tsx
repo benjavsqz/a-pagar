@@ -28,10 +28,6 @@ export default function Home() {
       {/* Hero */}
       <div className="flex-1 flex flex-col justify-center gap-10 py-6">
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 bg-[#111113] border border-[#222226] rounded-full px-3 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00DF76] animate-pulse" />
-            <span className="text-xs text-[#8a8a96]">Sin apps · Sin registro</span>
-          </div>
           <h1 className="text-[3.25rem] font-black leading-[1.0] tracking-tight">
             Divide la<br />
             cuenta.<br />

@@ -100,13 +100,31 @@ export function useSession(sessionId: string) {
     }
   }, [load])
 
-  const confirmPayment = useCallback(async (participantId: string) => {
+  const confirmPayment = useCallback(async (participantId: string): Promise<string | null> => {
     const supabase = createClient()
-    await supabase.from('payments')
+    const { error } = await supabase
+      .from('payments')
       .update({ confirmed_by_host: true })
       .eq('session_id', sessionId)
       .eq('participant_id', participantId)
-  }, [sessionId])
+
+    if (error) return error.message
+
+    // Optimistic local update so UI reflects immediately
+    setData(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        payments: prev.payments.map(p =>
+          p.participant_id === participantId ? { ...p, confirmed_by_host: true } : p
+        ),
+      }
+    })
+
+    // Also force a reload to sync any other changes
+    await load()
+    return null
+  }, [sessionId, load])
 
   return { data, loading, error, refetch: load, addClaim, removeClaim, confirmPayment }
 }

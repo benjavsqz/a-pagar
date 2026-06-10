@@ -18,6 +18,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   const { data, loading, error, confirmPayment } = useSession(id)
   const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const prevPaymentCount = useRef(0)
 
   // Subscribe to push notifications as host
@@ -66,7 +67,17 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const handleConfirmPayment = async (participantId: string) => {
-    await confirmPayment(participantId)
+    setConfirmingId(participantId)
+    const err = await confirmPayment(participantId)
+    setConfirmingId(null)
+
+    if (err) {
+      toast(`Error al confirmar: ${err}`, 'error')
+      return
+    }
+
+    toast('Pago confirmado ✓')
+
     // Send push to participant
     const participant = participants.find(p => p.id === participantId)
     const paymentRec = payments.find(p => p.participant_id === participantId)
@@ -257,6 +268,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
                     expanded={expandedParticipant === p.id}
                     onToggle={() => setExpandedParticipant(expandedParticipant === p.id ? null : p.id)}
                     onConfirm={() => handleConfirmPayment(p.id)}
+                    isConfirming={confirmingId === p.id}
                   />
                 )
               })
@@ -270,6 +282,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
                     setExpandedParticipant(expandedParticipant === s.participant.id ? null : s.participant.id)
                   }
                   onConfirm={() => handleConfirmPayment(s.participant.id)}
+                  isConfirming={confirmingId === s.participant.id}
                 />
               ))
           }
@@ -302,7 +315,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 // ── Equal split participant card ──────────────────────────────────────────────
 
 function EqualParticipantCard({
-  name, amount, payment, expanded, onToggle, onConfirm,
+  name, amount, payment, expanded, onToggle, onConfirm, isConfirming,
 }: {
   name: string
   amount: number
@@ -310,6 +323,7 @@ function EqualParticipantCard({
   expanded: boolean
   onToggle: () => void
   onConfirm: () => void
+  isConfirming: boolean
 }) {
   const isPaid = !!payment
   const isConfirmed = payment?.confirmed_by_host ?? false
@@ -354,7 +368,7 @@ function EqualParticipantCard({
             </a>
           )}
           {isPaid && !isConfirmed && (
-            <Button size="sm" fullWidth onClick={onConfirm} className="mt-2">
+            <Button size="sm" fullWidth onClick={onConfirm} loading={isConfirming} className="mt-2">
               <CheckCircle2 className="w-4 h-4" /> Confirmar pago recibido
             </Button>
           )}
@@ -372,13 +386,14 @@ function EqualParticipantCard({
 // ── Items participant card ────────────────────────────────────────────────────
 
 function ParticipantCard({
-  summary, propinaPct, expanded, onToggle, onConfirm,
+  summary, propinaPct, expanded, onToggle, onConfirm, isConfirming,
 }: {
   summary: ReturnType<typeof computeParticipantSummary>
   propinaPct: number
   expanded: boolean
   onToggle: () => void
   onConfirm: () => void
+  isConfirming: boolean
 }) {
   const { participant, items, total, payment } = summary
   const hasMarked = items.length > 0
@@ -450,7 +465,7 @@ function ParticipantCard({
             </a>
           )}
           {isPaid && !isConfirmed && (
-            <Button size="sm" fullWidth onClick={onConfirm} className="mt-2">
+            <Button size="sm" fullWidth onClick={onConfirm} loading={isConfirming} className="mt-2">
               <CheckCircle2 className="w-4 h-4" /> Confirmar pago recibido
             </Button>
           )}
