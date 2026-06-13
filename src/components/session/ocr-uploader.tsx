@@ -151,7 +151,8 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
       ) : (
         <div className="relative w-full rounded-2xl overflow-hidden bg-[#ffffff] border border-[#ece2d5]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Boleta" className="w-full max-h-64 object-contain" />
+          {/* width/height reservan espacio mientras carga el blob, evitando CLS */}
+          <img src={preview} alt="Boleta" width={600} height={800} className="w-full max-h-64 object-contain" />
 
           {isProcessing && (
             <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4">
