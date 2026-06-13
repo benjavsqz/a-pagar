@@ -7,6 +7,8 @@ export interface LocalSessionEntry {
   hostName: string | null
   splitMode: 'items' | 'equal'
   createdAt: string
+  // host-specific: token secreto para confirmar pagos / cerrar la boleta
+  hostToken?: string
   // participant-specific
   participantId?: string
   participantName?: string

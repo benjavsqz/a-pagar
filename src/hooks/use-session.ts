@@ -1,7 +1,11 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getLocalSession } from '@/lib/local-sessions'
 import type { Session, Item, Participant, Claim, Payment, SessionWithData } from '@/types'
+
+// PGRST202 = función RPC inexistente (migración 005 sin aplicar) → modo legacy
+const RPC_MISSING = 'PGRST202'
 
 export function useSession(sessionId: string) {
   const [data, setData] = useState<SessionWithData | null>(null)
@@ -41,14 +45,19 @@ export function useSession(sessionId: string) {
   }, [sessionId])
 
   useEffect(() => {
+    // Falso positivo del linter: load() es async — sus setState ocurren después
+    // de los await (callbacks de red), nunca sincrónicamente dentro del efecto.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
     const supabase = createClient()
 
     const channel = supabase
       .channel(`session:${sessionId}`)
+      // claims sin filtro: la columna claims.session_id recién existe desde la
+      // migración 005; cuando esté aplicada en prod se puede filtrar igual que abajo
       .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `session_id=eq.${sessionId}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `session_id=eq.${sessionId}` }, () => load())
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -102,13 +111,26 @@ export function useSession(sessionId: string) {
 
   const confirmPayment = useCallback(async (participantId: string): Promise<string | null> => {
     const supabase = createClient()
-    const { error } = await supabase
-      .from('payments')
-      .update({ confirmed_by_host: true })
-      .eq('session_id', sessionId)
-      .eq('participant_id', participantId)
+    const hostToken = getLocalSession(sessionId)?.hostToken ?? null
 
-    if (error) return error.message
+    // Vía segura: RPC que valida el token de anfitrión (migración 005)
+    const { error: rpcError } = await supabase.rpc('confirm_payment', {
+      p_session_id: sessionId,
+      p_participant_id: participantId,
+      p_token: hostToken,
+    })
+
+    if (rpcError && rpcError.code === RPC_MISSING) {
+      // Modo legacy: update directo (políticas previas a la migración 005)
+      const { error } = await supabase
+        .from('payments')
+        .update({ confirmed_by_host: true })
+        .eq('session_id', sessionId)
+        .eq('participant_id', participantId)
+      if (error) return error.message
+    } else if (rpcError) {
+      return rpcError.message
+    }
 
     // Optimistic local update so UI reflects immediately
     setData(prev => {
@@ -126,5 +148,33 @@ export function useSession(sessionId: string) {
     return null
   }, [sessionId, load])
 
-  return { data, loading, error, refetch: load, addClaim, removeClaim, confirmPayment }
+  const closeSession = useCallback(async (): Promise<string | null> => {
+    const supabase = createClient()
+    const hostToken = getLocalSession(sessionId)?.hostToken ?? null
+
+    const { error: rpcError } = await supabase.rpc('close_session', {
+      p_session_id: sessionId,
+      p_token: hostToken,
+    })
+
+    if (rpcError && rpcError.code === RPC_MISSING) {
+      // Modo legacy: update directo (solo funciona antes de la migración 004)
+      const { error } = await supabase
+        .from('sessions')
+        .update({ status: 'closed' })
+        .eq('id', sessionId)
+      if (error) return error.message
+    } else if (rpcError) {
+      return rpcError.message
+    }
+
+    setData(prev => prev
+      ? { ...prev, session: { ...prev.session, status: 'closed' } }
+      : prev
+    )
+    await load()
+    return null
+  }, [sessionId, load])
+
+  return { data, loading, error, refetch: load, addClaim, removeClaim, confirmPayment, closeSession }
 }

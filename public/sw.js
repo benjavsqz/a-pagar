@@ -31,10 +31,7 @@ self.addEventListener('notificationclick', e => {
   )
 })
 
-// Minimal offline cache for the app shell
-const CACHE = 'apagar-v1'
-const SHELL = ['/', '/crear', '/cuenta']
-
+// Network-first fallback: si no hay red, intenta servir desde la caché del navegador
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
   if (!e.request.url.startsWith(self.location.origin)) return

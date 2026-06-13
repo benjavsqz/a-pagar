@@ -4,20 +4,44 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
+const EVENTS = ['payment_received', 'payment_confirmed'] as const
+type PushEvent = (typeof EVENTS)[number]
+
+// Acota un campo de texto que viene del cliente antes de meterlo en una notificación
+const clean = (v: unknown, max = 60): string =>
+  typeof v === 'string' ? v.slice(0, max) : ''
+
 export async function POST(req: NextRequest) {
+  if (!process.env.VAPID_SUBJECT || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    return NextResponse.json({ error: 'Push no configurado' }, { status: 500 })
+  }
   // Initialize VAPID at runtime so env vars are available
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT!,
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
+    process.env.VAPID_SUBJECT,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
   )
   try {
-    const { sessionId, event, payload } = await req.json()
-    // event: 'payment_received' | 'payment_confirmed'
-    // payload: { participantName, amount, url }
+    const body = await req.json()
+    const sessionId = clean(body.sessionId, 40)
+    const event = body.event as PushEvent
+    const rawPayload = (typeof body.payload === 'object' && body.payload !== null ? body.payload : {}) as Record<string, unknown>
+    const payload = {
+      participantId: clean(rawPayload.participantId, 40),
+      participantName: clean(rawPayload.participantName),
+      hostName: clean(rawPayload.hostName),
+      amount: clean(rawPayload.amount, 20),
+      url: clean(rawPayload.url, 100),
+    }
 
-    if (!sessionId || !event) {
+    // sessionId debe ser un UUID y el evento uno conocido
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!UUID_RE.test(sessionId) || !EVENTS.includes(event)) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    }
+    // La URL de destino solo puede ser una ruta interna de la app
+    if (payload.url && !/^\/(s|host)\/[0-9a-f-]+$/i.test(payload.url)) {
+      payload.url = '/'
     }
 
     const supabase = await createClient()

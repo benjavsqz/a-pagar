@@ -129,16 +129,58 @@ async function callGemini(apiKey: string, imageBase64: string, mimeType: string)
   throw new Error('GEMINI_OVERLOADED')
 }
 
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic'])
+// ~6 MB de imagen ≈ 8 MB en base64; el cliente comprime a <500 KB, esto es solo tope de abuso
+const MAX_BASE64_LENGTH = 8 * 1024 * 1024
+
+// Rate limit en memoria por IP (ventana deslizante). En serverless es por
+// instancia — no es perfecto, pero frena el abuso casual de la cuota de Gemini.
+const RATE_LIMIT = 10
+const RATE_WINDOW_MS = 10 * 60 * 1000
+const requestLog = new Map<string, number[]>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const recent = (requestLog.get(ip) ?? []).filter(t => now - t < RATE_WINDOW_MS)
+  if (recent.length >= RATE_LIMIT) {
+    requestLog.set(ip, recent)
+    return true
+  }
+  recent.push(now)
+  requestLog.set(ip, recent)
+  // Evitar crecimiento sin límite del mapa
+  if (requestLog.size > 1000) {
+    for (const [key, times] of requestLog) {
+      if (times.every(t => now - t >= RATE_WINDOW_MS)) requestLog.delete(key)
+    }
+  }
+  return false
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GOOGLE_AI_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'GOOGLE_AI_API_KEY no configurada' }, { status: 500 })
   }
 
+  const ip = (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim()
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: '429: demasiadas solicitudes — espera unos minutos' },
+      { status: 429 }
+    )
+  }
+
   try {
     const { imageBase64, mimeType } = await req.json()
-    if (!imageBase64 || !mimeType) {
+    if (typeof imageBase64 !== 'string' || typeof mimeType !== 'string' || !imageBase64) {
       return NextResponse.json({ error: 'Falta imagen' }, { status: 400 })
+    }
+    if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+      return NextResponse.json({ error: 'Formato de imagen no soportado' }, { status: 415 })
+    }
+    if (imageBase64.length > MAX_BASE64_LENGTH) {
+      return NextResponse.json({ error: 'Imagen demasiado grande (máx 6 MB)' }, { status: 413 })
     }
 
     const result = await callGemini(apiKey, imageBase64, mimeType)
@@ -193,6 +235,13 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('OCR route error:', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    // No devolver el error interno crudo: puede contener detalles del proveedor.
+    // El cliente solo necesita distinguir sobrecarga/cuota para mostrar el mensaje correcto.
+    const publicMsg = msg.includes('GEMINI_OVERLOADED') || msg.includes('503')
+      ? 'GEMINI_OVERLOADED'
+      : msg.includes('429')
+      ? '429: límite de uso alcanzado'
+      : 'Error al procesar la boleta'
+    return NextResponse.json({ error: publicMsg }, { status: 500 })
   }
 }

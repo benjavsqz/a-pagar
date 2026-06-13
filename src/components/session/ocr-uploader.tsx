@@ -143,7 +143,7 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
               <p className="text-xs font-semibold">Desde galería</p>
             </button>
           </div>
-          <p className="text-xs text-[#4a4a54] text-center">Apunta bien al total de la boleta</p>
+          <p className="text-xs text-[#76767f] text-center">Apunta bien al total de la boleta</p>
         </div>
       ) : (
         <div className="relative w-full rounded-2xl overflow-hidden bg-[#111113] border border-[#222226]">
