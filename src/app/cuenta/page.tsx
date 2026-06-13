@@ -110,10 +110,16 @@ export default function CuentaPage() {
 
   // Total por cobrar (confirmed by host across all active sessions)
   const pendingToCollect = activeHost.reduce((sum, c) => {
-    const total = c.itemsTotal
-    const propina = c.session ? Math.ceil(total * c.session.propina_pct / 100) : 0
-    const billTotal = total + propina
-    return sum + (billTotal - c.confirmedAmount)
+    const s = c.session
+    let target: number
+    if (s?.split_mode === 'equal' && s.split_total && s.split_n) {
+      // El host no se cobra a sí mismo: solo las (n-1) partes de los demás
+      target = Math.ceil(s.split_total / s.split_n) * (s.split_n - 1)
+    } else {
+      const propina = s ? Math.ceil(c.itemsTotal * s.propina_pct / 100) : 0
+      target = c.itemsTotal + propina
+    }
+    return sum + Math.max(0, target - c.confirmedAmount)
   }, 0)
 
   const isEmpty = cards.length === 0
@@ -127,6 +133,7 @@ export default function CuentaPage() {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => router.push('/')}
+          aria-label="Volver al inicio"
           className="p-2 -ml-2 hover:bg-[#18181b] rounded-xl transition-colors text-[#8a8a96] hover:text-white"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -137,7 +144,7 @@ export default function CuentaPage() {
           </div>
           <span className="text-base font-black tracking-tight">A-Pagar</span>
         </div>
-        <h1 className="text-xl font-bold ml-1">Mis boletas</h1>
+        <h1 className="font-display text-xl font-bold ml-1">Mis boletas</h1>
       </div>
 
       {loading ? (
@@ -150,11 +157,11 @@ export default function CuentaPage() {
         <div className="space-y-6">
           {/* Summary card — only when there are active host sessions */}
           {activeHost.length > 0 && pendingToCollect > 0 && (
-            <div className="bg-gradient-to-br from-[#00DF76]/15 to-[#00DF76]/5 border border-[#00DF76]/25 rounded-2xl p-4">
+            <div className="bg-gradient-to-br from-[#00DF76]/15 to-[#00DF76]/5 border border-[#00DF76]/25 rounded-2xl p-4" style={{ animation: 'scale-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-[#00DF76]/80 font-medium uppercase tracking-wider">Por cobrar</p>
-                  <p className="text-3xl font-black text-[#00DF76] mt-0.5">{formatCLP(pendingToCollect)}</p>
+                  <p className="money text-3xl font-black text-[#00DF76] mt-0.5">{formatCLP(pendingToCollect)}</p>
                   <p className="text-xs text-[#8a8a96] mt-1">
                     en {activeHost.length} boleta{activeHost.length !== 1 ? 's' : ''} activa{activeHost.length !== 1 ? 's' : ''}
                   </p>
@@ -197,7 +204,7 @@ export default function CuentaPage() {
 
       {/* Floating + button */}
       <Link href="/crear" className="fixed bottom-6 right-4 z-50">
-        <button className="w-14 h-14 bg-[#00DF76] rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(0,223,118,0.4)] hover:bg-[#00c96a] active:scale-95 transition-all">
+        <button aria-label="Nueva boleta" className="w-14 h-14 bg-[#00DF76] rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(0,223,118,0.4)] hover:bg-[#00c96a] active:scale-95 transition-all">
           <Plus className="w-6 h-6 text-black" strokeWidth={2.5} />
         </button>
       </Link>
@@ -212,7 +219,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-[#8a8a96] uppercase tracking-wider">{title}</span>
-        <span className="text-xs bg-[#18181b] border border-[#222226] rounded-full px-2 py-0.5 text-[#4a4a54]">
+        <span className="text-xs bg-[#18181b] border border-[#222226] rounded-full px-2 py-0.5 text-[#76767f]">
           {count}
         </span>
       </div>
@@ -248,7 +255,7 @@ function HostSessionCard({ card }: { card: SessionCard }) {
               <p className="font-semibold text-sm leading-tight">
                 {local.restaurantName ?? 'Sin nombre'}
               </p>
-              <p className="text-xs text-[#4a4a54] mt-0.5">
+              <p className="text-xs text-[#76767f] mt-0.5">
                 {date} · {participantCount} persona{participantCount !== 1 ? 's' : ''}
                 {isEqual && ' · partes iguales'}
               </p>
@@ -258,7 +265,7 @@ function HostSessionCard({ card }: { card: SessionCard }) {
             <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${
               isActive
                 ? 'bg-[#00DF76]/10 text-[#00DF76] border-[#00DF76]/20'
-                : 'bg-[#18181b] text-[#4a4a54] border-[#222226]'
+                : 'bg-[#18181b] text-[#76767f] border-[#222226]'
             }`}>
               {isActive ? 'Activa' : 'Cerrada'}
             </span>
@@ -271,9 +278,9 @@ function HostSessionCard({ card }: { card: SessionCard }) {
               <span className="text-[#8a8a96]">
                 {confirmedCount}/{participantCount} pagaron
               </span>
-              <span>
+              <span className="money">
                 <span className="font-bold text-[#00DF76]">{formatCLP(confirmedAmount)}</span>
-                <span className="text-[#4a4a54]"> / {formatCLP(billTotal)}</span>
+                <span className="text-[#76767f]"> / {formatCLP(billTotal)}</span>
               </span>
             </div>
             <div className="h-1.5 bg-[#1a1a1e] rounded-full overflow-hidden">
@@ -290,7 +297,7 @@ function HostSessionCard({ card }: { card: SessionCard }) {
             <Share2 className="w-3 h-3" />
             <span>Compartir link</span>
           </div>
-          <ArrowUpRight className="w-4 h-4 text-[#4a4a54]" />
+          <ArrowUpRight className="w-4 h-4 text-[#76767f]" />
         </div>
       </div>
     </Link>
@@ -320,25 +327,25 @@ function ParticipantSessionCard({ card }: { card: SessionCard }) {
               ? <CheckCircle2 className="w-4 h-4 text-[#00DF76]" />
               : hasPaid
               ? <Clock className="w-4 h-4 text-yellow-500" />
-              : <Clock className="w-4 h-4 text-[#4a4a54]" />
+              : <Clock className="w-4 h-4 text-[#76767f]" />
             }
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm truncate">
               {local.restaurantName ?? 'Sin nombre'}
             </p>
-            <p className="text-xs text-[#4a4a54] mt-0.5">
+            <p className="text-xs text-[#76767f] mt-0.5">
               {date} · {local.hostName ?? 'Host'} te invitó
             </p>
           </div>
           <div className="text-right shrink-0">
             {myPayment && (
-              <p className={`text-sm font-bold ${isConfirmed ? 'text-[#00DF76]' : 'text-[#c0c0c8]'}`}>
+              <p className={`money text-sm font-bold ${isConfirmed ? 'text-[#00DF76]' : 'text-[#c0c0c8]'}`}>
                 {formatCLP(myPayment.amount)}
               </p>
             )}
             <p className={`text-xs mt-0.5 ${
-              isConfirmed ? 'text-[#00DF76]' : hasPaid ? 'text-yellow-500' : 'text-[#4a4a54]'
+              isConfirmed ? 'text-[#00DF76]' : hasPaid ? 'text-yellow-500' : 'text-[#76767f]'
             }`}>
               {isConfirmed ? 'Confirmado ✓' : hasPaid ? 'Pendiente' : 'Sin pagar'}
             </p>
@@ -359,7 +366,7 @@ function EmptyState() {
       </div>
       <div>
         <p className="font-semibold text-[#c0c0c8]">No tienes boletas aún</p>
-        <p className="text-sm text-[#4a4a54] mt-1 max-w-[200px] mx-auto leading-relaxed">
+        <p className="text-sm text-[#76767f] mt-1 max-w-[200px] mx-auto leading-relaxed">
           Crea una la próxima vez que salgas a comer
         </p>
       </div>

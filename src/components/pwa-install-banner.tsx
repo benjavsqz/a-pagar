@@ -24,13 +24,16 @@ export function PwaInstallBanner() {
     if (localStorage.getItem(DISMISSED_KEY)) return
 
     const ua = navigator.userAgent.toLowerCase()
-    const isIos = /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream
+    const isIos = /iphone|ipad|ipod/.test(ua) && !('MSStream' in window)
     const isAndroidChrome = /android/.test(ua) && /chrome/.test(ua) && !/edg/.test(ua)
 
+    // Small delay so it doesn't pop immediately on load
+    let iosTimer: ReturnType<typeof setTimeout> | undefined
     if (isIos) {
-      setPlatform('ios')
-      // Small delay so it doesn't pop immediately on load
-      setTimeout(() => setVisible(true), 3000)
+      iosTimer = setTimeout(() => {
+        setPlatform('ios')
+        setVisible(true)
+      }, 3000)
     }
 
     const handler = (e: Event) => {
@@ -43,7 +46,10 @@ export function PwaInstallBanner() {
     }
 
     window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+    return () => {
+      clearTimeout(iosTimer)
+      window.removeEventListener('beforeinstallprompt', handler)
+    }
   }, [])
 
   const handleDismiss = () => {
@@ -90,7 +96,8 @@ export function PwaInstallBanner() {
               </div>
               <button
                 onClick={handleDismiss}
-                className="p-1.5 rounded-lg hover:bg-[#18181b] transition-colors text-[#4a4a54] hover:text-[#8a8a96] shrink-0"
+                aria-label="Cerrar aviso de instalación"
+                className="p-1.5 rounded-lg hover:bg-[#18181b] transition-colors text-[#76767f] hover:text-[#8a8a96] shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>

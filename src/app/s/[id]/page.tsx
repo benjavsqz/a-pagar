@@ -1,5 +1,5 @@
 'use client'
-import { use, useState, useRef, useEffect } from 'react'
+import { use, useState, useRef } from 'react'
 import { useSession } from '@/hooks/use-session'
 import { usePush } from '@/hooks/use-push'
 import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/utils'
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import {
   CheckCircle2, Circle, Copy, Upload, Loader2, AlertCircle,
-  ArrowRight, Users, ChevronLeft,
+  ArrowRight, Users, Minus, Plus,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -36,9 +36,12 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
     role: 'participant',
   })
 
-  // Restore participant from localStorage if returning
-  useEffect(() => {
-    if (!data) return
+  // Restore participant from localStorage if returning.
+  // Render-phase update (patrón "adjusting state when props change"): corre una
+  // sola vez por sesión, así un reload realtime no te saca del paso actual.
+  const [restoredFor, setRestoredFor] = useState<string | null>(null)
+  if (data && restoredFor !== id) {
+    setRestoredFor(id)
     const local = getLocalSession(id)
     if (local?.role === 'participant' && local.participantId) {
       const existing = data.participants.find(p => p.id === local.participantId)
@@ -49,7 +52,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         setStep(payment ? 'done' : 'items')
       }
     }
-  }, [id, data])
+  }
 
   if (loading) return <LoadingScreen />
   if (error || !data) return <ErrorScreen message={error ?? 'Sesión no encontrada'} />
@@ -59,13 +62,28 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
   // ── PASO 1: ¿Quién eres? ───────────────────────────────────────────────────
   if (step === 'who') {
+    if (session.status === 'closed') {
+      return (
+        <ErrorScreen message={`Esta boleta${session.restaurant_name ? ` de ${session.restaurant_name}` : ''} ya fue cerrada por ${session.host_name}.`} />
+      )
+    }
+
     const handleJoin = async () => {
-      if (!nameInput.trim()) { toast('Ingresa tu nombre', 'error'); return }
+      const name = nameInput.trim()
+      if (!name) { toast('Ingresa tu nombre', 'error'); return }
+      if (participants.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        toast(`Ya hay alguien llamado "${name}" — agrega tu apellido o un apodo`, 'error')
+        return
+      }
+      if (isEqual && session.split_n && participants.length >= session.split_n - 1) {
+        toast(`La mesa ya está completa (${session.split_n} personas)`, 'error')
+        return
+      }
       setCreating(true)
       const supabase = createClient()
       const { data: p, error } = await supabase
         .from('participants')
-        .insert({ session_id: id, name: nameInput.trim() })
+        .insert({ session_id: id, name })
         .select()
         .single()
       if (error || !p) { toast('Error al unirse', 'error'); setCreating(false); return }
@@ -114,13 +132,13 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           </p>
 
           {isEqual && sharePerPerson > 0 && (
-            <div className="mt-4 bg-[#8b5cf6]/10 border border-[#8b5cf6]/25 rounded-2xl px-4 py-3">
+            <div className="mt-4 bg-[#8b7cff]/10 border border-[#8b7cff]/25 rounded-2xl px-4 py-3">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <Users className="w-4 h-4 text-[#8b5cf6]" />
-                <span className="text-xs text-[#8b5cf6]/80 font-medium">Tu parte estimada</span>
+                <Users className="w-4 h-4 text-[#8b7cff]" />
+                <span className="text-xs text-[#8b7cff]/80 font-medium">Tu parte estimada</span>
               </div>
-              <p className="text-2xl font-black text-white">{formatCLP(sharePerPerson)}</p>
-              <p className="text-xs text-[#4a4a54] mt-1">
+              <p className="money text-2xl font-black text-white">{formatCLP(sharePerPerson)}</p>
+              <p className="text-xs text-[#76767f] mt-1">
                 {formatCLP(session.split_total ?? 0)} ÷ {session.split_n} personas
               </p>
             </div>
@@ -231,7 +249,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                 >
                   {isMine
                     ? <CheckCircle2 className="w-5 h-5 text-[#00DF76] shrink-0" />
-                    : <Circle className="w-5 h-5 text-[#4a4a54] shrink-0" />
+                    : <Circle className="w-5 h-5 text-[#76767f] shrink-0" />
                   }
                   <div className="flex-1 text-left min-w-0">
                     <p className={`text-sm font-medium truncate ${isMine ? 'text-white' : 'text-[#c0c0c8]'}`}>
@@ -247,47 +265,79 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                     <p className={`text-sm font-bold ${isMine ? 'text-[#00DF76]' : 'text-[#8a8a96]'}`}>
                       {formatCLP(pricePerPerson)}
                     </p>
-                    {itemClaims.length > 1 && <p className="text-xs text-[#4a4a54]">÷ {itemClaims.length}</p>}
+                    {itemClaims.length > 1 && <p className="text-xs text-[#76767f]">÷ {itemClaims.length}</p>}
                   </div>
                 </button>
               )
             }
 
             const unitPrice = units[0].price
-            const myUnit = units.find(u => myClaimedItemIds.has(u.id))
+            const myCount = units.filter(u => myClaimedItemIds.has(u.id)).length
+            const freeCount = units.filter(u => !claims.some(c => c.item_id === u.id)).length
+
+            const handleAdd = async () => {
+              const freeUnit = units.find(u => !claims.some(c => c.item_id === u.id))
+              if (freeUnit) await addClaim(freeUnit.id, me.id)
+            }
+            const handleRemoveOne = async () => {
+              const myUnit = units.find(u => myClaimedItemIds.has(u.id))
+              if (myUnit) await removeClaim(myUnit.id, me.id)
+            }
 
             return (
-              <button
+              <div
                 key={name}
-                onClick={() => handleToggle(units)}
-                className={`w-full text-left p-3.5 rounded-2xl border transition-all active:scale-95 ${
+                className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
                   isMine
                     ? 'bg-[#00DF76]/10 border-[#00DF76]/40'
-                    : 'bg-[#111113] border-[#18181b] hover:border-[#2e2e34]'
+                    : 'bg-[#111113] border-[#18181b]'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   {isMine
                     ? <CheckCircle2 className="w-5 h-5 text-[#00DF76] shrink-0" />
-                    : <Circle className="w-5 h-5 text-[#4a4a54] shrink-0" />
+                    : <Circle className="w-5 h-5 text-[#76767f] shrink-0" />
                   }
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm font-medium truncate ${isMine ? 'text-white' : 'text-[#c0c0c8]'}`}>
                       {name}
                     </p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-semibold bg-[#222226] text-[#8a8a96] px-2 py-0.5 rounded-full">×{units.length}</span>
-                    <p className={`text-sm font-bold mt-0.5 ${isMine ? 'text-[#00DF76]' : 'text-[#8a8a96]'}`}>
-                      {formatCLP(unitPrice)} c/u
-                    </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <span className="text-xs font-semibold bg-[#222226] text-[#8a8a96] px-2 py-0.5 rounded-full">×{units.length}</span>
+                      <p className={`text-sm font-bold mt-0.5 ${isMine ? 'text-[#00DF76]' : 'text-[#8a8a96]'}`}>
+                        {formatCLP(unitPrice)} c/u
+                      </p>
+                    </div>
+                    <div className="flex items-center bg-[#0d0d0f] border border-[#222226] rounded-lg">
+                      <button
+                        onClick={handleRemoveOne}
+                        disabled={myCount === 0}
+                        aria-label="Quitar uno"
+                        className="w-7 h-7 flex items-center justify-center text-[#8a8a96] hover:text-white disabled:opacity-20 transition-colors"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className={`w-5 text-center text-xs font-bold tabular-nums select-none ${myCount > 0 ? 'text-[#00DF76]' : 'text-[#76767f]'}`}>
+                        {myCount}
+                      </span>
+                      <button
+                        onClick={handleAdd}
+                        disabled={freeCount === 0}
+                        aria-label="Agregar uno"
+                        className="w-7 h-7 flex items-center justify-center text-[#8a8a96] hover:text-[#00DF76] disabled:opacity-20 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-2.5 ml-8">
                   {units.map((unit, idx) => {
                     const unitClaims = claims.filter(c => c.item_id === unit.id)
                     const unitClaimers = participants.filter(p => unitClaims.some(c => c.participant_id === p.id))
-                    const isMyUnit = myUnit?.id === unit.id
+                    const isMyUnit = myClaimedItemIds.has(unit.id)
                     const isShared = unitClaims.length > 1
                     const chipLabel = isMyUnit
                       ? 'Tú' + (isShared ? ` + ${unitClaimers.filter(p => p.id !== me.id).map(p => p.name.split(' ')[0]).join('+')}` : '')
@@ -303,7 +353,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                             ? 'bg-[#00DF76] text-black'
                             : unitClaimers.length > 0
                             ? 'bg-[#222226] text-[#c0c0c8]'
-                            : 'border border-dashed border-[#2e2e34] text-[#4a4a54]'
+                            : 'border border-dashed border-[#2e2e34] text-[#76767f]'
                         }`}
                       >
                         {chipLabel}
@@ -311,7 +361,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                     )
                   })}
                 </div>
-              </button>
+              </div>
             )
           })}
         </div>
@@ -322,7 +372,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs text-[#8a8a96]">Tu total a pagar</p>
-                <p className="text-2xl font-black text-[#00DF76]">{formatCLP(summary.total)}</p>
+                <p className="money text-2xl font-black text-[#00DF76]">{formatCLP(summary.total)}</p>
                 {session.propina_pct > 0 && summary.items.length > 0 && (
                   <p className="text-xs text-[#8a8a96]">
                     {formatCLP(summary.subtotal)} + propina {formatCLP(summary.propina)}
@@ -383,14 +433,16 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         const path = `${id}/${me.id}.${ext}`
         const { error: uploadError } = await supabase.storage.from('comprobantes').upload(path, file, { upsert: true })
         if (uploadError) throw uploadError
-        const { data: urlData } = supabase.storage.from('comprobantes').getPublicUrl(path)
-        await supabase.from('payments').upsert({
+        // Se guarda el PATH (no una URL pública): el bucket es privado y el
+        // host genera una signed URL al momento de ver el comprobante
+        const { error: payError } = await supabase.from('payments').upsert({
           session_id: id,
           participant_id: me.id,
           amount: myTotal,
-          comprobante_url: urlData.publicUrl,
+          comprobante_url: path,
           paid_at: new Date().toISOString(),
-        })
+        }, { onConflict: 'session_id,participant_id' })
+        if (payError) throw payError
         toast('Comprobante enviado ✓')
         // Notify host
         fetch('/api/push/send', {
@@ -419,12 +471,13 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
       setUploadingComprobante(true)
       try {
         const supabase = createClient()
-        await supabase.from('payments').upsert({
+        const { error: payError } = await supabase.from('payments').upsert({
           session_id: id,
           participant_id: me.id,
           amount: myTotal,
           paid_at: new Date().toISOString(),
-        })
+        }, { onConflict: 'session_id,participant_id' })
+        if (payError) throw payError
         // Notify host
         fetch('/api/push/send', {
           method: 'POST',
@@ -457,13 +510,13 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             </div>
             <span className="text-base font-black tracking-tight text-[#00DF76]">A-Pagar</span>
           </div>
-          <h1 className="text-xl font-bold">Tu total a pagar</h1>
+          <h1 className="font-display text-xl font-bold">Tu total a pagar</h1>
         </div>
 
         {/* Total */}
-        <Card className="p-4 text-center">
+        <Card variant="premium" className="p-4 text-center">
           <p className="text-xs text-[#8a8a96] mb-1">Transferir a {session.host_name}</p>
-          <p className="text-4xl font-black text-[#00DF76]">{formatCLP(myTotal)}</p>
+          <p className="money text-4xl font-black text-[#00DF76]" style={{ animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(myTotal)}</p>
           {!isEqual && session.propina_pct > 0 && (
             <p className="text-xs text-[#8a8a96] mt-1">
               {formatCLP(summary.subtotal)} + propina {formatCLP(summary.propina)}
@@ -551,28 +604,33 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
   // ── PASO 4: Listo ──────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6 text-center overflow-hidden">
       <Toaster />
 
       {/* Success glow */}
       <div className="pointer-events-none fixed inset-0 bg-[#00DF76]/4 blur-[120px] -z-10" />
 
-      <div className="w-24 h-24 rounded-full bg-[#00DF76]/10 border-2 border-[#00DF76]/30 flex items-center justify-center">
-        <CheckCircle2 className="w-12 h-12 text-[#00DF76]" />
+      {/* Sello animado con anillos que se expanden */}
+      <div className="relative" style={{ animation: 'pop 0.6s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+        <span className="absolute inset-0 rounded-full border border-[#00DF76]/30 animate-ping" style={{ animationDuration: '2s' }} />
+        <span className="absolute -inset-3 rounded-full border border-[#00DF76]/15 animate-ping" style={{ animationDuration: '2.6s' }} />
+        <div className="relative w-24 h-24 rounded-full bg-[#00DF76]/10 border-2 border-[#00DF76]/30 flex items-center justify-center brand-glow">
+          <CheckCircle2 className="w-12 h-12 text-[#00DF76]" />
+        </div>
       </div>
 
-      <div>
-        <h1 className="text-3xl font-black">¡Listo!</h1>
-        <p className="text-[#8a8a96] mt-2">
+      <div style={{ animation: 'fade-up 0.5s cubic-bezier(0.22,1,0.36,1) 0.15s both' }}>
+        <h1 className="font-display text-3xl font-black">¡Listo!</h1>
+        <p className="text-[#9a9aa6] mt-2">
           Le avisamos a {session.host_name} que ya transferiste.
         </p>
-        <p className="text-lg font-bold text-white mt-3">{formatCLP(myTotal)}</p>
-        <p className="text-sm text-[#4a4a54]">
+        <p className="money text-lg font-bold text-white mt-3">{formatCLP(myTotal)}</p>
+        <p className="text-sm text-[#76767f]">
           {session.restaurant_name ? `${session.restaurant_name} · ` : ''}{me.name}
         </p>
       </div>
 
-      <div className="w-full space-y-2">
+      <div className="w-full space-y-2" style={{ animation: 'fade-up 0.5s cubic-bezier(0.22,1,0.36,1) 0.3s both' }}>
         {!isEqual && (
           <Button variant="secondary" fullWidth onClick={() => setStep('items')}>
             Ver mis ítems

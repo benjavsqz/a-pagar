@@ -2,6 +2,7 @@
 import { use, useEffect, useRef, useState } from 'react'
 import { useSession } from '@/hooks/use-session'
 import { usePush } from '@/hooks/use-push'
+import { ComprobanteLink } from '@/components/session/comprobante-link'
 import { computeParticipantSummary, formatCLP, generateSessionLink, copyToClipboard } from '@/lib/utils'
 import { saveLocalSession } from '@/lib/local-sessions'
 import { toast, Toaster } from '@/components/ui/toast'
@@ -15,10 +16,11 @@ import Link from 'next/link'
 
 export default function HostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { data, loading, error, confirmPayment } = useSession(id)
+  const { data, loading, error, confirmPayment, closeSession } = useSession(id)
   const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [closing, setClosing] = useState(false)
   const prevPaymentCount = useRef(0)
 
   // Subscribe to push notifications as host
@@ -29,7 +31,8 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     if (!data) return
     const newCount = data.payments.length
     if (prevPaymentCount.current > 0 && newCount > prevPaymentCount.current) {
-      const latest = data.payments[data.payments.length - 1]
+      // El más reciente por fecha — el orden del array no está garantizado
+      const latest = [...data.payments].sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
       const participant = data.participants.find(p => p.id === latest?.participant_id)
       if (participant) {
         toast(`💸 ${participant.name} transfirió ${formatCLP(latest.amount)}`)
@@ -100,6 +103,18 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
+  const handleCloseSession = async () => {
+    if (!window.confirm('¿Cerrar esta boleta? Nadie más podrá unirse.')) return
+    setClosing(true)
+    const err = await closeSession()
+    setClosing(false)
+    if (err) {
+      toast(`Error al cerrar: ${err}`, 'error')
+      return
+    }
+    toast('Boleta cerrada ✓')
+  }
+
   const handleShareWhatsApp = () => {
     const restaurantText = session.restaurant_name ? `de ${session.restaurant_name}` : 'del restaurant'
     const text = isEqual
@@ -156,6 +171,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
         <div className="flex items-center gap-2 mb-3">
           <Link
             href="/cuenta"
+            aria-label="Volver a mis boletas"
             className="p-2 -ml-2 hover:bg-[#18181b] rounded-xl transition-colors text-[#8a8a96] hover:text-white"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -175,10 +191,10 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 
         <div className="flex items-center gap-2">
           {isEqual
-            ? <Users className="w-5 h-5 text-[#8b5cf6]" />
+            ? <Users className="w-5 h-5 text-[#8b7cff]" />
             : <Utensils className="w-5 h-5 text-[#8a8a96]" />
           }
-          <h1 className="text-2xl font-bold">{session.restaurant_name ?? 'Sin nombre'}</h1>
+          <h1 className="font-display text-2xl font-bold">{session.restaurant_name ?? 'Sin nombre'}</h1>
         </div>
         <p className="text-sm text-[#8a8a96] mt-0.5">
           {participants.length} participante{participants.length !== 1 ? 's' : ''} ·{' '}
@@ -190,33 +206,33 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Equal split info banner */}
       {isEqual && sharePerPerson > 0 && (
-        <div className="bg-[#8b5cf6]/10 border border-[#8b5cf6]/25 rounded-2xl p-4">
+        <div className="bg-[#8b7cff]/10 border border-[#8b7cff]/25 rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-[#8b5cf6]/80 font-medium">Cada persona paga</p>
-              <p className="text-2xl font-black text-white">{formatCLP(sharePerPerson)}</p>
+              <p className="text-xs text-[#8b7cff]/90 font-medium">Cada persona paga</p>
+              <p className="money text-2xl font-black text-white">{formatCLP(sharePerPerson)}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-[#8a8a96]">Total boleta</p>
-              <p className="text-sm font-bold text-[#c0c0c8]">{formatCLP(session.split_total ?? 0)}</p>
-              <p className="text-xs text-[#4a4a54]">÷ {session.split_n} personas</p>
+              <p className="money text-sm font-bold text-[#c0c0c8]">{formatCLP(session.split_total ?? 0)}</p>
+              <p className="text-xs text-[#76767f]">÷ {session.split_n} personas</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Payment progress */}
-      <Card className="p-4 space-y-2.5">
+      <Card variant="premium" className="p-4 space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Cobrado</span>
-          <span className="text-sm font-bold">
+          <span className="money text-sm font-bold">
             <span className="text-[#00DF76]">{formatCLP(confirmedAmount)}</span>
-            <span className="text-[#4a4a54] font-normal"> / {formatCLP(targetToCollect)}</span>
+            <span className="text-[#76767f] font-normal"> / {formatCLP(targetToCollect)}</span>
           </span>
         </div>
-        <div className="h-2 bg-[#18181b] rounded-full overflow-hidden">
+        <div className="h-2 bg-[#181b20] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#00DF76] rounded-full transition-all duration-700"
+            className="h-full bg-gradient-to-r from-[#00DF76] to-[#00f08a] rounded-full transition-all duration-700"
             style={{ width: `${progressPct}%` }}
           />
         </div>
@@ -251,7 +267,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
       {participants.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-[#8a8a96] text-sm">Esperando que alguien abra el link...</p>
-          <p className="text-xs text-[#4a4a54] mt-1">Esta pantalla se actualiza automáticamente</p>
+          <p className="text-xs text-[#76767f] mt-1">Esta pantalla se actualiza automáticamente</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -308,6 +324,18 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           </div>
         </Card>
       )}
+
+      {/* Close session */}
+      {session.status === 'open' && (
+        <Button
+          variant="secondary"
+          fullWidth
+          loading={closing}
+          onClick={handleCloseSession}
+        >
+          Cerrar boleta
+        </Button>
+      )}
     </div>
   )
 }
@@ -346,7 +374,7 @@ function EqualParticipantCard({
           <p className="text-xs text-[#8a8a96] truncate">{statusLabel}</p>
         </div>
         <div className="text-right shrink-0 flex flex-col items-end">
-          <p className="font-bold text-sm">{formatCLP(amount)}</p>
+          <p className="money font-bold text-sm">{formatCLP(amount)}</p>
           {expanded ? <ChevronUp className="w-4 h-4 text-[#8a8a96]" /> : <ChevronDown className="w-4 h-4 text-[#8a8a96]" />}
         </div>
       </button>
@@ -358,14 +386,7 @@ function EqualParticipantCard({
             <span className="text-[#00DF76]">{formatCLP(amount)}</span>
           </div>
           {payment?.comprobante_url && (
-            <a
-              href={payment.comprobante_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300"
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> Ver comprobante
-            </a>
+            <ComprobanteLink value={payment.comprobante_url} />
           )}
           {isPaid && !isConfirmed && (
             <Button size="sm" fullWidth onClick={onConfirm} loading={isConfirming} className="mt-2">
@@ -424,7 +445,7 @@ function ParticipantCard({
           <p className="text-xs text-[#8a8a96] truncate">{statusLabel}</p>
         </div>
         <div className="text-right shrink-0 flex flex-col items-end">
-          <p className="font-bold text-sm">{formatCLP(total)}</p>
+          <p className="money font-bold text-sm">{formatCLP(total)}</p>
           {expanded ? <ChevronUp className="w-4 h-4 text-[#8a8a96]" /> : <ChevronDown className="w-4 h-4 text-[#8a8a96]" />}
         </div>
       </button>
@@ -439,7 +460,7 @@ function ParticipantCard({
                 <span className="text-[#c0c0c8]">{item.name}</span>
                 <span className="text-[#8a8a96]">
                   {formatCLP(item.price_per_person)}
-                  {item.claims.length > 1 && <span className="text-xs text-[#4a4a54] ml-1">÷{item.claims.length}</span>}
+                  {item.claims.length > 1 && <span className="text-xs text-[#76767f] ml-1">÷{item.claims.length}</span>}
                 </span>
               </div>
             ))
@@ -455,14 +476,9 @@ function ParticipantCard({
             <span className="text-[#00DF76]">{formatCLP(total)}</span>
           </div>
           {payment?.comprobante_url && (
-            <a
-              href={payment.comprobante_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 mt-2"
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> Ver comprobante
-            </a>
+            <div className="mt-2">
+              <ComprobanteLink value={payment.comprobante_url} />
+            </div>
           )}
           {isPaid && !isConfirmed && (
             <Button size="sm" fullWidth onClick={onConfirm} loading={isConfirming} className="mt-2">

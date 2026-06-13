@@ -14,17 +14,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClass: Record<Variant, string> = {
   primary:
-    'bg-[#00DF76] hover:bg-[#00f080] text-black font-bold shadow-[0_0_24px_rgba(0,223,118,0.25)] hover:shadow-[0_0_32px_rgba(0,223,118,0.35)]',
+    'bg-gradient-to-b from-[#00f08a] to-[#00DF76] hover:from-[#16ff9a] hover:to-[#00e882] text-[#001b0e] font-bold shadow-[0_4px_20px_-4px_rgba(0,223,118,0.45)] hover:shadow-[0_6px_28px_-4px_rgba(0,223,118,0.6)]',
   secondary:
-    'bg-[#18181b] hover:bg-[#222226] text-white border border-[#2e2e34] hover:border-[#3e3e46]',
+    'bg-[#181b20] hover:bg-[#20242b] text-white border border-[#30343d] hover:border-[#3e434d]',
   ghost:
-    'hover:bg-[#18181b] text-[#8a8a96] hover:text-white',
+    'hover:bg-[#181b20] text-[#9a9aa6] hover:text-white',
   destructive:
-    'bg-[#ff4d57] hover:bg-[#ff6570] text-white font-semibold',
+    'bg-[#ff5468] hover:bg-[#ff6878] text-white font-semibold',
 }
 
 const sizeClass: Record<Size, string> = {
-  sm: 'h-8 px-4 text-sm rounded-full',
+  sm: 'h-9 px-4 text-sm rounded-full',
   md: 'h-11 px-5 text-sm rounded-full',
   lg: 'h-14 px-7 text-base rounded-full',
 }
@@ -35,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none select-none',
+        'inline-flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none select-none',
         variantClass[variant],
         sizeClass[size],
         fullWidth && 'w-full',

@@ -4,13 +4,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
 import { toast, Toaster } from '@/components/ui/toast'
 import { ItemRow } from '@/components/session/item-row'
 import { OcrUploader } from '@/components/session/ocr-uploader'
 import { formatCLP, formatRut } from '@/lib/utils'
 import { saveLocalSession } from '@/lib/local-sessions'
-import type { Item } from '@/types'
 import { SelectField } from '@/components/ui/select-field'
 import {
   Plus, ArrowRight, ChevronLeft, Check, ChevronDown, ChevronUp,
@@ -32,6 +30,26 @@ const ACCOUNT_TYPES = [
   { value: 'Cuenta Digital', label: 'Cuenta Digital (MACH, Mercado Pago…)' },
   { value: 'Otro', label: 'Otro' },
 ]
+
+/**
+ * Genera y registra el token secreto de anfitrión (migración 005).
+ * Si la tabla aún no existe (migración sin aplicar), la sesión queda en modo
+ * legacy y las acciones de host funcionan sin token.
+ */
+async function registerHostToken(
+  supabase: ReturnType<typeof createClient>,
+  sessionId: string,
+): Promise<string | undefined> {
+  const hostToken = crypto.randomUUID()
+  const { error } = await supabase
+    .from('session_secrets')
+    .insert({ session_id: sessionId, host_token: hostToken })
+  if (error) {
+    console.warn('No se pudo registrar host_token (¿migración 005 sin aplicar?):', error.message)
+    return undefined
+  }
+  return hostToken
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,12 +88,12 @@ function StepIndicator({ steps, currentId }: { steps: { id: string; label: strin
                 ? 'bg-[#00DF76] text-black'
                 : idx === currentIndex
                 ? 'bg-[#00DF76] text-black shadow-[0_0_16px_rgba(0,223,118,0.35)]'
-                : 'bg-[#18181b] text-[#4a4a54] border border-[#222226]'
+                : 'bg-[#18181b] text-[#76767f] border border-[#222226]'
             }`}>
               {idx < currentIndex ? <Check className="w-3.5 h-3.5" /> : <span>{idx + 1}</span>}
             </div>
             <span className={`text-xs font-medium transition-colors ${
-              idx <= currentIndex ? 'text-white' : 'text-[#4a4a54]'
+              idx <= currentIndex ? 'text-white' : 'text-[#76767f]'
             }`}>
               {step.label}
             </span>
@@ -172,6 +190,8 @@ export default function CrearPage() {
       if (sessionErr) throw new Error(sessionErr.message)
       if (!session) throw new Error('No se pudo crear la sesión')
 
+      const hostToken = await registerHostToken(supabase, session.id)
+
       const dbItems: Array<{ session_id: string; name: string; price: number; position: number }> = []
       let pos = 0
       for (const it of validItems) {
@@ -190,6 +210,7 @@ export default function CrearPage() {
         hostName: hostName.trim(),
         splitMode: 'items',
         createdAt: session.created_at,
+        hostToken,
       })
 
       router.push(`/host/${session.id}`)
@@ -233,6 +254,8 @@ export default function CrearPage() {
       if (sessionErr) throw new Error(sessionErr.message)
       if (!session) throw new Error('No se pudo crear la sesión')
 
+      const hostToken = await registerHostToken(supabase, session.id)
+
       saveLocalSession({
         id: session.id,
         role: 'host',
@@ -240,6 +263,7 @@ export default function CrearPage() {
         hostName: hostName.trim(),
         splitMode: 'equal',
         createdAt: session.created_at,
+        hostToken,
       })
 
       router.push(`/host/${session.id}`)
@@ -272,7 +296,7 @@ export default function CrearPage() {
       <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
         <Toaster />
         <div className="flex items-center gap-3 mb-8">
-          <Link href="/" className="p-2 -ml-2 hover:bg-[#18181b] rounded-xl transition-colors text-[#8a8a96] hover:text-white">
+          <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[#18181b] rounded-xl transition-colors text-[#8a8a96] hover:text-white">
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
@@ -285,7 +309,7 @@ export default function CrearPage() {
 
         <div className="flex-1 flex flex-col justify-center gap-5">
           <div>
-            <h1 className="text-2xl font-black">¿Cómo quieres dividir?</h1>
+            <h1 className="font-display text-2xl font-black">¿Cómo quieres dividir?</h1>
             <p className="text-sm text-[#8a8a96] mt-1">Elige el método que mejor se ajusta a tu situación</p>
           </div>
 
@@ -315,11 +339,11 @@ export default function CrearPage() {
 
           <button
             onClick={() => setSplitMode('equal')}
-            className="w-full text-left p-5 bg-[#111113] border border-[#222226] rounded-2xl hover:border-[#8b5cf6]/40 active:scale-[0.98] transition-all group"
+            className="w-full text-left p-5 bg-[#111113] border border-[#222226] rounded-2xl hover:border-[#8b7cff]/40 active:scale-[0.98] transition-all group"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 flex items-center justify-center shrink-0 group-hover:bg-[#8b5cf6]/15 transition-colors">
-                <Users className="w-6 h-6 text-[#8b5cf6]" />
+              <div className="w-12 h-12 rounded-xl bg-[#8b7cff]/10 border border-[#8b7cff]/20 flex items-center justify-center shrink-0 group-hover:bg-[#8b7cff]/15 transition-colors">
+                <Users className="w-6 h-6 text-[#8b7cff]" />
               </div>
               <div className="flex-1">
                 <p className="font-bold text-base">Partes iguales</p>
@@ -330,7 +354,7 @@ export default function CrearPage() {
             </div>
             <div className="flex gap-1.5 flex-wrap mt-4">
               {['Rápido', 'Sin ítems', 'Simple'].map(tag => (
-                <span key={tag} className="text-[10px] bg-[#8b5cf6]/8 text-[#8b5cf6]/70 border border-[#8b5cf6]/15 px-2 py-0.5 rounded-full">
+                <span key={tag} className="text-[10px] bg-[#8b7cff]/8 text-[#8b7cff]/70 border border-[#8b7cff]/15 px-2 py-0.5 rounded-full">
                   {tag}
                 </span>
               ))}
@@ -350,6 +374,7 @@ export default function CrearPage() {
         <div className="flex items-center gap-3 mb-2">
           <button
             onClick={goBackItems}
+            aria-label="Volver"
             className="p-2 hover:bg-[#18181b] rounded-xl transition-colors text-[#8a8a96] hover:text-white"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -517,6 +542,7 @@ export default function CrearPage() {
       <div className="flex items-center gap-3 mb-2">
         <button
           onClick={goBackEqual}
+          aria-label="Volver"
           className="p-2 hover:bg-[#18181b] rounded-xl transition-colors text-[#8a8a96] hover:text-white"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -531,10 +557,10 @@ export default function CrearPage() {
 
       {stepEqual === 'amount' && (
         <div className="flex-1 flex flex-col gap-4">
-          <div className="bg-[#111113] border border-[#8b5cf6]/20 rounded-2xl p-4">
+          <div className="bg-[#111113] border border-[#8b7cff]/20 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-4 h-4 text-[#8b5cf6]" />
-              <p className="text-sm font-semibold text-[#8b5cf6]">División en partes iguales</p>
+              <Users className="w-4 h-4 text-[#8b7cff]" />
+              <p className="text-sm font-semibold text-[#8b7cff]">División en partes iguales</p>
             </div>
             <p className="text-xs text-[#8a8a96] leading-relaxed">
               Ingresa el total de la boleta (incluyendo propina) y cuántas personas son. Cada uno paga exactamente lo mismo.
@@ -561,7 +587,7 @@ export default function CrearPage() {
                   placeholder="0"
                   value={equalTotal}
                   onChange={e => setEqualTotal(e.target.value)}
-                  className="w-full bg-[#18181b] border border-[#2e2e34] rounded-xl pl-8 pr-4 py-3 text-lg font-bold text-white placeholder-[#2e2e34] focus:outline-none focus:border-[#00DF76]/50 transition-colors"
+                  className="w-full bg-[#18181b] border border-[#2e2e34] rounded-xl pl-8 pr-4 py-3 text-lg font-bold text-white placeholder-[#5e5e68] focus:outline-none focus:border-[#00DF76]/50 transition-colors"
                 />
               </div>
             </div>
@@ -573,6 +599,7 @@ export default function CrearPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setEqualN(n => String(Math.max(2, parseInt(n) - 1 || 2)))}
+                  aria-label="Una persona menos"
                   className="w-11 h-11 rounded-xl bg-[#18181b] border border-[#2e2e34] flex items-center justify-center text-xl font-bold text-[#8a8a96] hover:text-white hover:border-[#4a4a54] active:scale-95 transition-all"
                 >
                   −
@@ -585,10 +612,11 @@ export default function CrearPage() {
                   value={equalN}
                   onChange={e => setEqualN(e.target.value)}
                   placeholder="2"
-                  className="flex-1 bg-[#18181b] border border-[#2e2e34] rounded-xl px-4 py-3 text-lg font-bold text-white text-center placeholder-[#2e2e34] focus:outline-none focus:border-[#00DF76]/50 transition-colors"
+                  className="flex-1 bg-[#18181b] border border-[#2e2e34] rounded-xl px-4 py-3 text-lg font-bold text-white text-center placeholder-[#5e5e68] focus:outline-none focus:border-[#00DF76]/50 transition-colors"
                 />
                 <button
                   onClick={() => setEqualN(n => String(Math.min(30, parseInt(n) + 1 || 3)))}
+                  aria-label="Una persona más"
                   className="w-11 h-11 rounded-xl bg-[#18181b] border border-[#2e2e34] flex items-center justify-center text-xl font-bold text-[#8a8a96] hover:text-white hover:border-[#4a4a54] active:scale-95 transition-all"
                 >
                   +
@@ -599,9 +627,9 @@ export default function CrearPage() {
 
           {/* Live preview */}
           {totalNum > 0 && nNum >= 2 && (
-            <div className="bg-gradient-to-br from-[#8b5cf6]/15 to-[#8b5cf6]/5 border border-[#8b5cf6]/25 rounded-2xl p-4">
-              <p className="text-xs text-[#8b5cf6]/80 mb-1">Cada persona paga</p>
-              <p className="text-3xl font-black text-white">{formatCLP(sharePerPerson)}</p>
+            <div className="bg-gradient-to-br from-[#8b7cff]/15 to-[#8b7cff]/5 border border-[#8b7cff]/25 rounded-2xl p-4">
+              <p className="text-xs text-[#8b7cff]/90 mb-1">Cada persona paga</p>
+              <p className="money text-3xl font-black text-white" style={{ animation: 'pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(sharePerPerson)}</p>
               <p className="text-xs text-[#8a8a96] mt-1">
                 {formatCLP(totalNum)} ÷ {nNum} personas
               </p>

@@ -31,7 +31,7 @@ export function Toaster() {
   if (!current) return null
 
   return (
-    <div className={cn(
+    <div role="status" aria-live="polite" className={cn(
       'fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl z-50 transition-all',
       current.type === 'success' && 'bg-[#00DF76] text-black',
       current.type === 'error' && 'bg-[#ff4d57] text-white',
