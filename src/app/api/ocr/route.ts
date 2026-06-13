@@ -85,6 +85,19 @@ Si la diferencia es mayor a 500 pesos (o 2% del subtotal), REVISA y agrega los
 Responde ÚNICAMENTE con JSON válido, sin texto extra, sin markdown, sin backticks.
 Si la imagen no es una boleta o es ilegible: {"subtotal": null, "items": []}`
 
+// Refuerzo para la SEGUNDA pasada, cuando la suma no calzó con el subtotal.
+const THOROUGH_SUFFIX = `
+
+─── SEGUNDA PASADA — REVISIÓN EXHAUSTIVA ─────────────────────────────────────
+Esta es una RE-LECTURA porque en el primer intento la suma de los ítems NO calzó
+con el subtotal de la boleta. Falta(n) o sobra(n) ítem(s). Sé extra meticuloso:
+- Recorre la boleta LÍNEA POR LÍNEA, de arriba hacia abajo, sin saltarte ninguna.
+- Incluye ítems tenues, con texto borroso, partidos en dos líneas o pegados al borde.
+- Verifica que cada "price" use la columna VALOR (total de la línea), no el unitario.
+- Cuenta bien la columna CANT: una línea "2 x ..." son 2 unidades del mismo ítem.
+- Re-suma TODOS los "price". Si el total no coincide con el subtotal de la boleta,
+  vuelve a mirar la imagen y encuentra el/los ítem(s) que faltan ANTES de responder.`
+
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 const MODEL_CASCADE = [
@@ -93,17 +106,25 @@ const MODEL_CASCADE = [
   'gemini-2.0-flash',
 ]
 
-async function callGemini(apiKey: string, imageBase64: string, mimeType: string) {
+// En modo exhaustivo saltamos el modelo más liviano y partimos por el más capaz.
+const MODEL_CASCADE_THOROUGH = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+]
+
+async function callGemini(apiKey: string, imageBase64: string, mimeType: string, thorough = false) {
   const genAI = new GoogleGenerativeAI(apiKey)
   const config = { temperature: 0.05, maxOutputTokens: 8192 }
+  const prompt = thorough ? PROMPT + THOROUGH_SUFFIX : PROMPT
+  const cascade = thorough ? MODEL_CASCADE_THOROUGH : MODEL_CASCADE
 
-  for (const modelId of MODEL_CASCADE) {
+  for (const modelId of cascade) {
     const model = genAI.getGenerativeModel({ model: modelId, generationConfig: config })
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const result = await model.generateContent([
-          PROMPT,
+          prompt,
           { inlineData: { data: imageBase64, mimeType } },
         ])
         return result
@@ -172,7 +193,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { imageBase64, mimeType } = await req.json()
+    const { imageBase64, mimeType, thorough } = await req.json()
     if (typeof imageBase64 !== 'string' || typeof mimeType !== 'string' || !imageBase64) {
       return NextResponse.json({ error: 'Falta imagen' }, { status: 400 })
     }
@@ -183,7 +204,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Imagen demasiado grande (máx 6 MB)' }, { status: 413 })
     }
 
-    const result = await callGemini(apiKey, imageBase64, mimeType)
+    const result = await callGemini(apiKey, imageBase64, mimeType, thorough === true)
     const rawText = result.response.text()
     const clean = rawText
       .replace(/```json\s*/gi, '')

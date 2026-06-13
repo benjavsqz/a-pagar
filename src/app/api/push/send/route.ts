@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
       payload.url = '/'
     }
 
-    const supabase = await createClient()
+    // Preferimos el cliente admin (service-role) para poder cerrar la lectura
+    // pública de push_subscriptions; si la key no está, caemos al anon.
+    const supabase = createAdminClient() ?? await createClient()
 
     // Determine which role to notify
     const targetRole = event === 'payment_received' ? 'host' : 'participant'
