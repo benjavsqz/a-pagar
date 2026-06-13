@@ -17,7 +17,7 @@ export function ItemRow({
   onNameChange, onPriceChange, onQuantityChange, onRemove,
 }: ItemRowProps) {
   return (
-    <div className="bg-[#111113] border border-[#222226] rounded-xl p-3 space-y-2">
+    <div className="bg-[#ffffff] border border-[#ece2d5] rounded-xl p-3 space-y-2">
       {/* Row 1: Name */}
       <input
         type="text"
@@ -25,29 +25,29 @@ export function ItemRow({
         value={name}
         onChange={e => onNameChange(e.target.value)}
         className={cn(
-          'w-full h-9 bg-[#0d0d0f] border border-[#1e1e22] rounded-lg px-3 text-sm text-white placeholder:text-[#76767f]',
-          'focus:outline-none focus:border-[#00DF76]/50 focus:shadow-[0_0_0_3px_rgba(0,223,118,0.06)] transition-all',
+          'w-full h-9 bg-[#f6f1ea] border border-[#f1e9dd] rounded-lg px-3 text-sm text-[#1a1614] placeholder:text-[#8a7d71]',
+          'focus:outline-none focus:border-[#0bb673]/50 focus:shadow-[0_0_0_3px_rgba(11,182,115,0.06)] transition-all',
         )}
       />
       {/* Row 2: Qty + Price + Remove */}
       <div className="flex items-center gap-2">
         {/* Quantity stepper */}
-        <div className="flex items-center bg-[#0d0d0f] border border-[#1e1e22] rounded-lg shrink-0">
+        <div className="flex items-center bg-[#f6f1ea] border border-[#f1e9dd] rounded-lg shrink-0">
           <button
             onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
             disabled={quantity <= 1}
             aria-label="Disminuir cantidad"
-            className="w-8 h-8 flex items-center justify-center text-[#8a8a96] hover:text-white disabled:opacity-25 transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-25 transition-colors"
           >
             <Minus className="w-3 h-3" />
           </button>
-          <span className="w-6 text-center text-xs font-bold tabular-nums select-none text-[#c0c0c8]">
+          <span className="w-6 text-center text-xs font-bold tabular-nums select-none text-[#4a423b]">
             {quantity}
           </span>
           <button
             onClick={() => onQuantityChange(quantity + 1)}
             aria-label="Aumentar cantidad"
-            className="w-8 h-8 flex items-center justify-center text-[#8a8a96] hover:text-white transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] transition-colors"
           >
             <Plus className="w-3 h-3" />
           </button>
@@ -55,14 +55,14 @@ export function ItemRow({
 
         {/* Unit price */}
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#76767f] text-xs pointer-events-none">$</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7d71] text-xs pointer-events-none">$</span>
           <input
             type="number"
             inputMode="numeric"
             placeholder="0"
             value={price}
             onChange={e => onPriceChange(e.target.value)}
-            className="w-full h-8 bg-[#0d0d0f] border border-[#1e1e22] rounded-lg pl-6 pr-3 text-sm text-white placeholder:text-[#76767f] focus:outline-none focus:border-[#00DF76]/50 focus:shadow-[0_0_0_3px_rgba(0,223,118,0.06)] transition-all"
+            className="w-full h-8 bg-[#f6f1ea] border border-[#f1e9dd] rounded-lg pl-6 pr-3 text-sm text-[#1a1614] placeholder:text-[#8a7d71] focus:outline-none focus:border-[#0bb673]/50 focus:shadow-[0_0_0_3px_rgba(11,182,115,0.06)] transition-all"
           />
         </div>
 
@@ -71,7 +71,7 @@ export function ItemRow({
           <button
             onClick={onRemove}
             aria-label="Eliminar ítem"
-            className="p-1.5 hover:bg-[#18181b] rounded-lg text-[#76767f] hover:text-[#ff4d57] transition-colors shrink-0"
+            className="p-1.5 hover:bg-[#f6f1ea] rounded-lg text-[#8a7d71] hover:text-[#e5484d] transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>

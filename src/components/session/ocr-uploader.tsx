@@ -16,6 +16,7 @@ interface OcrResult {
 interface OcrUploaderProps {
   onResult: (result: OcrResult) => void
   onPreviewReady?: (url: string) => void
+  onImageReady?: (img: { base64: string; mimeType: string }) => void
   onManual?: () => void
 }
 
@@ -30,7 +31,7 @@ const STATUS_MESSAGES: Record<Status, string> = {
   error: '',
 }
 
-export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderProps) {
+export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }: OcrUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const galleryRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -51,6 +52,8 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
     try {
       // Compress before sending — phone cameras produce 3–8 MB, Gemini prefers <2 MB
       const { base64, mimeType } = await compressImage(file)
+      // Entrega la imagen comprimida al padre para poder re-analizar si no calza
+      onImageReady?.({ base64, mimeType })
 
       setStatus('processing')
       // After 8s without response, Gemini is likely retrying — update message
@@ -126,36 +129,36 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => inputRef.current?.click()}
-              className="h-28 bg-[#111113] border-2 border-dashed border-[#222226] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#00DF76]/40 active:scale-[0.97] transition-all"
+              className="h-28 bg-[#ffffff] border-2 border-dashed border-[#ece2d5] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#0bb673]/40 active:scale-[0.97] transition-all"
             >
-              <div className="w-10 h-10 rounded-full bg-[#18181b] flex items-center justify-center">
-                <Camera className="w-5 h-5 text-[#00DF76]" />
+              <div className="w-10 h-10 rounded-full bg-[#e7f9f0] flex items-center justify-center">
+                <Camera className="w-5 h-5 text-[#077f4e]" />
               </div>
               <p className="text-xs font-semibold">Tomar foto</p>
             </button>
             <button
               onClick={() => galleryRef.current?.click()}
-              className="h-28 bg-[#111113] border-2 border-dashed border-[#222226] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#00DF76]/40 active:scale-[0.97] transition-all"
+              className="h-28 bg-[#ffffff] border-2 border-dashed border-[#ece2d5] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#0bb673]/40 active:scale-[0.97] transition-all"
             >
-              <div className="w-10 h-10 rounded-full bg-[#18181b] flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-[#00DF76]" />
+              <div className="w-10 h-10 rounded-full bg-[#e7f9f0] flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-[#077f4e]" />
               </div>
               <p className="text-xs font-semibold">Desde galería</p>
             </button>
           </div>
-          <p className="text-xs text-[#76767f] text-center">Apunta bien al total de la boleta</p>
+          <p className="text-xs text-[#6b5f55] text-center">Apunta bien al total de la boleta</p>
         </div>
       ) : (
-        <div className="relative w-full rounded-2xl overflow-hidden bg-[#111113] border border-[#222226]">
+        <div className="relative w-full rounded-2xl overflow-hidden bg-[#ffffff] border border-[#ece2d5]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={preview} alt="Boleta" className="w-full max-h-64 object-contain" />
 
           {isProcessing && (
             <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4">
-              <Loader2 className="w-9 h-9 text-[#00DF76] animate-spin" />
+              <Loader2 className="w-9 h-9 text-[#077f4e] animate-spin" />
               <div className="text-center">
-                <p className="text-sm font-semibold">{STATUS_MESSAGES[status]}</p>
-                <p className="text-xs text-[#8a8a96] mt-1">Esto toma unos segundos</p>
+                <p className="text-sm font-semibold text-white">{STATUS_MESSAGES[status]}</p>
+                <p className="text-xs text-white/70 mt-1">Esto toma unos segundos</p>
               </div>
               {/* Step dots */}
               <div className="flex items-center gap-2">
@@ -166,10 +169,10 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
                       key={s}
                       className={`w-2 h-2 rounded-full transition-all ${
                         idx === activeIdx
-                          ? 'bg-[#00DF76] scale-125'
+                          ? 'bg-[#0bb673] scale-125'
                           : idx < activeIdx
-                          ? 'bg-[#00DF76]/50'
-                          : 'bg-[#2e2e34]'
+                          ? 'bg-[#0bb673]/50'
+                          : 'bg-[#e0d4c4]'
                       }`}
                     />
                   )
@@ -183,13 +186,13 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
       {/* Success */}
       {status === 'done' && (
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2 text-xs text-[#00DF76]">
+          <div className="flex items-center gap-2 text-xs text-[#077f4e]">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>{detectedCount} ítem{detectedCount !== 1 ? 's' : ''} detectado{detectedCount !== 1 ? 's' : ''} — revisa abajo</span>
           </div>
           <button
             onClick={retry}
-            className="text-xs text-[#8a8a96] hover:text-[#c0c0c8] flex items-center gap-1 transition-colors"
+            className="text-xs text-[#6b5f55] hover:text-[#4a423b] flex items-center gap-1 transition-colors"
           >
             <Upload className="w-3 h-3" /> Otra foto
           </button>
@@ -198,7 +201,7 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
 
       {/* Mismatch warning */}
       {mismatch && (
-        <div className="flex items-start gap-2 text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+        <div className="flex items-start gap-2 text-xs text-[#92600a] bg-[#fef3c7] border border-[#fcd34d] rounded-xl p-3">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>
             La boleta dice <strong>{new Intl.NumberFormat('es-CL', {style:'currency',currency:'CLP',maximumFractionDigits:0}).format(mismatch.subtotal)}</strong> pero
@@ -211,7 +214,7 @@ export function OcrUploader({ onResult, onPreviewReady, onManual }: OcrUploaderP
       {/* Error */}
       {status === 'error' && (
         <div className="space-y-3">
-          <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+          <div className="flex items-start gap-2 text-xs text-[#c0303a] bg-[#fee2e2] border border-[#fca5a5] rounded-xl p-3">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               {errorMsg.includes('GOOGLE_AI_API_KEY')

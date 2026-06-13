@@ -14,13 +14,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClass: Record<Variant, string> = {
   primary:
-    'bg-gradient-to-b from-[#00f08a] to-[#00DF76] hover:from-[#16ff9a] hover:to-[#00e882] text-[#001b0e] font-bold shadow-[0_4px_20px_-4px_rgba(0,223,118,0.45)] hover:shadow-[0_6px_28px_-4px_rgba(0,223,118,0.6)]',
+    'bg-gradient-to-b from-[#0bb673] to-[#089457] hover:from-[#0cc47c] hover:to-[#0a9c63] text-white font-bold shadow-[0_8px_22px_-6px_rgba(11,182,115,0.55)] hover:shadow-[0_10px_28px_-6px_rgba(11,182,115,0.7)]',
   secondary:
-    'bg-[#181b20] hover:bg-[#20242b] text-white border border-[#30343d] hover:border-[#3e434d]',
+    'bg-white hover:bg-[#fbf7f1] text-[#1a1614] border border-[#e0d4c4] hover:border-[#d3c4b1] shadow-[0_2px_6px_rgba(150,100,60,0.08)]',
   ghost:
-    'hover:bg-[#181b20] text-[#9a9aa6] hover:text-white',
+    'hover:bg-[#f6ede1] text-[#7a6e64] hover:text-[#1a1614]',
   destructive:
-    'bg-[#ff5468] hover:bg-[#ff6878] text-white font-semibold',
+    'bg-[#e5484d] hover:bg-[#ef5b60] text-white font-semibold',
 }
 
 const sizeClass: Record<Size, string> = {

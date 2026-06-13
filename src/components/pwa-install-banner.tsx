@@ -76,18 +76,18 @@ export function PwaInstallBanner() {
     <div className={`fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe-bottom transition-all duration-500 ${
       visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
     }`}>
-      <div className="max-w-md mx-auto mb-4 bg-[#111113] border border-[#2e2e34] rounded-2xl p-4 shadow-[0_-4px_32px_rgba(0,0,0,0.5)]">
+      <div className="max-w-md mx-auto mb-4 bg-[#ffffff] border border-[#e0d4c4] rounded-2xl p-4 shadow-[0_-4px_32px_rgba(0,0,0,0.5)]">
         <div className="flex items-start gap-3">
           {/* App icon */}
-          <div className="w-12 h-12 rounded-xl bg-[#00DF76] flex items-center justify-center shrink-0">
-            <span className="text-black text-xl font-black leading-none">$</span>
+          <div className="w-12 h-12 rounded-xl bg-[#0bb673] flex items-center justify-center shrink-0">
+            <span className="text-[#1a1614] text-xl font-black leading-none">$</span>
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-bold text-sm">Instalar A-Pagar</p>
-                <p className="text-xs text-[#8a8a96] mt-0.5">
+                <p className="text-xs text-[#6b5f55] mt-0.5">
                   {platform === 'ios'
                     ? 'Agrégala a tu pantalla de inicio para acceso rápido'
                     : 'Instala la app para acceso rápido sin abrir el navegador'
@@ -97,7 +97,7 @@ export function PwaInstallBanner() {
               <button
                 onClick={handleDismiss}
                 aria-label="Cerrar aviso de instalación"
-                className="p-1.5 rounded-lg hover:bg-[#18181b] transition-colors text-[#76767f] hover:text-[#8a8a96] shrink-0"
+                className="p-1.5 rounded-lg hover:bg-[#f6f1ea] transition-colors text-[#8a7d71] hover:text-[#6b5f55] shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -107,7 +107,7 @@ export function PwaInstallBanner() {
               <button
                 onClick={handleInstall}
                 disabled={installing}
-                className="mt-3 flex items-center gap-2 bg-[#00DF76] text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-[#00c969] active:scale-95 transition-all disabled:opacity-60"
+                className="mt-3 flex items-center gap-2 bg-[#0bb673] text-white text-sm font-bold px-4 py-2 rounded-full hover:bg-[#00c969] active:scale-95 transition-all disabled:opacity-60"
               >
                 <Download className="w-3.5 h-3.5" />
                 {installing ? 'Instalando...' : 'Instalar gratis'}
@@ -116,17 +116,17 @@ export function PwaInstallBanner() {
 
             {platform === 'ios' && (
               <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-2 text-xs text-[#8a8a96]">
-                  <span className="w-5 h-5 rounded-full bg-[#18181b] border border-[#2e2e34] flex items-center justify-center text-[10px] font-bold text-[#8a8a96] shrink-0">1</span>
+                <div className="flex items-center gap-2 text-xs text-[#6b5f55]">
+                  <span className="w-5 h-5 rounded-full bg-[#f6f1ea] border border-[#e0d4c4] flex items-center justify-center text-[10px] font-bold text-[#6b5f55] shrink-0">1</span>
                   <span>Toca</span>
-                  <Share className="w-3.5 h-3.5 text-[#00DF76] inline shrink-0" />
-                  <span className="text-white font-medium">Compartir</span>
+                  <Share className="w-3.5 h-3.5 text-[#077f4e] inline shrink-0" />
+                  <span className="text-[#1a1614] font-medium">Compartir</span>
                   <span>en Safari</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[#8a8a96]">
-                  <span className="w-5 h-5 rounded-full bg-[#18181b] border border-[#2e2e34] flex items-center justify-center text-[10px] font-bold text-[#8a8a96] shrink-0">2</span>
+                <div className="flex items-center gap-2 text-xs text-[#6b5f55]">
+                  <span className="w-5 h-5 rounded-full bg-[#f6f1ea] border border-[#e0d4c4] flex items-center justify-center text-[10px] font-bold text-[#6b5f55] shrink-0">2</span>
                   <span>Selecciona</span>
-                  <span className="text-white font-medium">&quot;Agregar a inicio&quot;</span>
+                  <span className="text-[#1a1614] font-medium">&quot;Agregar a inicio&quot;</span>
                 </div>
               </div>
             )}

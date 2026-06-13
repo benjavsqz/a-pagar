@@ -18,6 +18,7 @@ interface SessionCard {
   local: LocalSessionEntry
   session: Session | null
   itemsTotal: number
+  target: number // lo que el host espera cobrar (lo que deben los demás)
   participantCount: number
   confirmedAmount: number
   confirmedCount: number
@@ -39,20 +40,28 @@ export default function CuentaPage() {
       const ids = locals.map(l => l.id)
       const supabase = createClient()
 
-      const [sessionsRes, itemsRes, participantsRes, paymentsRes] = await Promise.all([
+      const [sessionsRes, itemsRes, participantsRes, paymentsRes, claimsRes] = await Promise.all([
         supabase.from('sessions').select('*').in('id', ids),
-        supabase.from('items').select('session_id, price').in('session_id', ids),
+        supabase.from('items').select('session_id, id, price').in('session_id', ids),
         supabase.from('participants').select('session_id, id').in('session_id', ids),
         supabase.from('payments').select('session_id, participant_id, amount, confirmed_by_host').in('session_id', ids),
+        supabase.from('claims').select('session_id, item_id').in('session_id', ids),
       ])
 
       const sessMap = Object.fromEntries(
         (sessionsRes.data ?? []).map(s => [s.id, s as Session])
       )
 
+      // Ítems que tienen al menos un claim → su precio sí se cobra
+      const claimedItemIds = new Set((claimsRes.data ?? []).map(c => c.item_id))
+
       const itemTotals: Record<string, number> = {}
+      const claimedTotals: Record<string, number> = {}
       for (const item of itemsRes.data ?? []) {
         itemTotals[item.session_id] = (itemTotals[item.session_id] ?? 0) + item.price
+        if (claimedItemIds.has(item.id)) {
+          claimedTotals[item.session_id] = (claimedTotals[item.session_id] ?? 0) + item.price
+        }
       }
 
       const participantCounts: Record<string, number> = {}
@@ -85,10 +94,21 @@ export default function CuentaPage() {
           ? (session.split_total ?? 0)
           : (itemTotals[local.id] ?? 0)
 
+        // Lo que el host espera cobrar = lo que deben los demás:
+        // - equal: (n-1) cuotas; - ítems: lo reclamado + propina (no su consumo)
+        let target = 0
+        if (session?.split_mode === 'equal' && session.split_total && session.split_n) {
+          target = Math.ceil(session.split_total / session.split_n) * Math.max(0, session.split_n - 1)
+        } else if (session) {
+          const claimed = claimedTotals[local.id] ?? 0
+          target = Math.ceil(claimed * (1 + session.propina_pct / 100))
+        }
+
         return {
           local,
           session,
           itemsTotal,
+          target,
           participantCount: participantCounts[local.id] ?? 0,
           confirmedAmount: confirmedAmounts[local.id] ?? 0,
           confirmedCount: confirmedCounts[local.id] ?? 0,
@@ -108,39 +128,31 @@ export default function CuentaPage() {
   const activeHost = hostCards.filter(c => c.session?.status !== 'closed')
   const completedHost = hostCards.filter(c => c.session?.status === 'closed')
 
-  // Total por cobrar (confirmed by host across all active sessions)
-  const pendingToCollect = activeHost.reduce((sum, c) => {
-    const s = c.session
-    let target: number
-    if (s?.split_mode === 'equal' && s.split_total && s.split_n) {
-      // El host no se cobra a sí mismo: solo las (n-1) partes de los demás
-      target = Math.ceil(s.split_total / s.split_n) * (s.split_n - 1)
-    } else {
-      const propina = s ? Math.ceil(c.itemsTotal * s.propina_pct / 100) : 0
-      target = c.itemsTotal + propina
-    }
-    return sum + Math.max(0, target - c.confirmedAmount)
-  }, 0)
+  // Total por cobrar = suma de lo que falta en cada boleta activa
+  const pendingToCollect = activeHost.reduce(
+    (sum, c) => sum + Math.max(0, c.target - c.confirmedAmount),
+    0
+  )
 
   const isEmpty = cards.length === 0
 
   return (
     <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6 pb-24">
       {/* Ambient glow */}
-      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#00DF76]/4 blur-[100px] rounded-full -z-10" />
+      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => router.push('/')}
           aria-label="Volver al inicio"
-          className="p-2 -ml-2 hover:bg-[#18181b] rounded-xl transition-colors text-[#8a8a96] hover:text-white"
+          className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#00DF76] flex items-center justify-center">
-            <span className="text-black text-xs font-black leading-none">$</span>
+          <div className="w-7 h-7 rounded-lg bg-[#0bb673] flex items-center justify-center">
+            <span className="text-white text-xs font-black leading-none">$</span>
           </div>
           <span className="text-base font-black tracking-tight">A-Pagar</span>
         </div>
@@ -149,7 +161,7 @@ export default function CuentaPage() {
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-7 h-7 text-[#00DF76] animate-spin" />
+          <Loader2 className="w-7 h-7 text-[#077f4e] animate-spin" />
         </div>
       ) : isEmpty ? (
         <EmptyState />
@@ -157,17 +169,17 @@ export default function CuentaPage() {
         <div className="space-y-6">
           {/* Summary card — only when there are active host sessions */}
           {activeHost.length > 0 && pendingToCollect > 0 && (
-            <div className="bg-gradient-to-br from-[#00DF76]/15 to-[#00DF76]/5 border border-[#00DF76]/25 rounded-2xl p-4" style={{ animation: 'scale-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}>
+            <div className="bg-gradient-to-br from-[#0bb673]/15 to-[#0bb673]/5 border border-[#0bb673]/25 rounded-2xl p-4" style={{ animation: 'scale-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs text-[#00DF76]/80 font-medium uppercase tracking-wider">Por cobrar</p>
-                  <p className="money text-3xl font-black text-[#00DF76] mt-0.5">{formatCLP(pendingToCollect)}</p>
-                  <p className="text-xs text-[#8a8a96] mt-1">
+                  <p className="text-xs text-[#077f4e] font-medium uppercase tracking-wider">Por cobrar</p>
+                  <p className="money text-3xl font-black text-[#077f4e] mt-0.5">{formatCLP(pendingToCollect)}</p>
+                  <p className="text-xs text-[#6b5f55] mt-1">
                     en {activeHost.length} boleta{activeHost.length !== 1 ? 's' : ''} activa{activeHost.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-[#00DF76]/15 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-[#00DF76]" />
+                <div className="w-10 h-10 rounded-full bg-[#0bb673]/15 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-[#077f4e]" />
                 </div>
               </div>
             </div>
@@ -204,8 +216,8 @@ export default function CuentaPage() {
 
       {/* Floating + button */}
       <Link href="/crear" className="fixed bottom-6 right-4 z-50">
-        <button aria-label="Nueva boleta" className="w-14 h-14 bg-[#00DF76] rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(0,223,118,0.4)] hover:bg-[#00c96a] active:scale-95 transition-all">
-          <Plus className="w-6 h-6 text-black" strokeWidth={2.5} />
+        <button aria-label="Nueva boleta" className="w-14 h-14 bg-[#0bb673] rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(11,182,115,0.4)] hover:bg-[#0a9c63] active:scale-95 transition-all">
+          <Plus className="w-6 h-6 text-[#1a1614]" strokeWidth={2.5} />
         </button>
       </Link>
     </div>
@@ -218,12 +230,12 @@ function Section({ title, count, children }: { title: string; count: number; chi
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-[#8a8a96] uppercase tracking-wider">{title}</span>
-        <span className="text-xs bg-[#18181b] border border-[#222226] rounded-full px-2 py-0.5 text-[#76767f]">
+        <span className="text-xs font-semibold text-[#6b5f55] uppercase tracking-wider">{title}</span>
+        <span className="text-xs bg-[#f6f1ea] border border-[#ece2d5] rounded-full px-2 py-0.5 text-[#6b5f55]">
           {count}
         </span>
       </div>
-      {children}
+      <div className="space-y-2.5 stagger">{children}</div>
     </div>
   )
 }
@@ -231,31 +243,28 @@ function Section({ title, count, children }: { title: string; count: number; chi
 // ── Host session card ─────────────────────────────────────────────────────────
 
 function HostSessionCard({ card }: { card: SessionCard }) {
-  const { local, session, itemsTotal, participantCount, confirmedAmount, confirmedCount } = card
-  const propinaPct = session?.propina_pct ?? 0
-  const propina = session?.split_mode === 'equal' ? 0 : Math.ceil(itemsTotal * propinaPct / 100)
-  const billTotal = itemsTotal + propina
-  const progressPct = billTotal > 0 ? Math.min(100, Math.round((confirmedAmount / billTotal) * 100)) : 0
+  const { local, session, target, participantCount, confirmedAmount, confirmedCount } = card
+  const progressPct = target > 0 ? Math.min(100, Math.round((confirmedAmount / target) * 100)) : 0
   const isActive = session?.status !== 'closed'
   const isEqual = session?.split_mode === 'equal'
   const date = new Date(local.createdAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
 
   return (
     <Link href={`/host/${local.id}`}>
-      <div className="bg-[#111113] border border-[#222226] rounded-2xl p-4 hover:border-[#2e2e34] active:scale-[0.98] transition-all">
+      <div className="bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 hover:border-[#e0d4c4] lift">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#18181b] flex items-center justify-center shrink-0">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isEqual ? 'bg-[#eeebfd]' : 'bg-[#e7f9f0]'}`}>
               {isEqual
-                ? <Users className="w-4 h-4 text-[#8a8a96]" />
-                : <Utensils className="w-4 h-4 text-[#8a8a96]" />
+                ? <Users className="w-4 h-4 text-[#5b4dc7]" />
+                : <Utensils className="w-4 h-4 text-[#077f4e]" />
               }
             </div>
             <div>
               <p className="font-semibold text-sm leading-tight">
                 {local.restaurantName ?? 'Sin nombre'}
               </p>
-              <p className="text-xs text-[#76767f] mt-0.5">
+              <p className="text-xs text-[#6b5f55] mt-0.5">
                 {date} · {participantCount} persona{participantCount !== 1 ? 's' : ''}
                 {isEqual && ' · partes iguales'}
               </p>
@@ -264,28 +273,28 @@ function HostSessionCard({ card }: { card: SessionCard }) {
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${
               isActive
-                ? 'bg-[#00DF76]/10 text-[#00DF76] border-[#00DF76]/20'
-                : 'bg-[#18181b] text-[#76767f] border-[#222226]'
+                ? 'bg-[#0bb673]/10 text-[#077f4e] border-[#0bb673]/20'
+                : 'bg-[#f6f1ea] text-[#6b5f55] border-[#ece2d5]'
             }`}>
               {isActive ? 'Activa' : 'Cerrada'}
             </span>
           </div>
         </div>
 
-        {billTotal > 0 && (
+        {target > 0 && (
           <>
             <div className="flex items-center justify-between mb-1.5 text-xs">
-              <span className="text-[#8a8a96]">
+              <span className="text-[#6b5f55]">
                 {confirmedCount}/{participantCount} pagaron
               </span>
               <span className="money">
-                <span className="font-bold text-[#00DF76]">{formatCLP(confirmedAmount)}</span>
-                <span className="text-[#76767f]"> / {formatCLP(billTotal)}</span>
+                <span className="font-bold text-[#077f4e]">{formatCLP(confirmedAmount)}</span>
+                <span className="text-[#6b5f55]"> / {formatCLP(target)}</span>
               </span>
             </div>
-            <div className="h-1.5 bg-[#1a1a1e] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[#f1e9dd] rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#00DF76] rounded-full transition-all duration-700"
+                className="h-full bg-[#0bb673] rounded-full transition-all duration-700"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -293,11 +302,11 @@ function HostSessionCard({ card }: { card: SessionCard }) {
         )}
 
         <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1 text-xs text-[#8a8a96]">
+          <div className="flex items-center gap-1 text-xs text-[#6b5f55]">
             <Share2 className="w-3 h-3" />
             <span>Compartir link</span>
           </div>
-          <ArrowUpRight className="w-4 h-4 text-[#76767f]" />
+          <ArrowUpRight className="w-4 h-4 text-[#6b5f55]" />
         </div>
       </div>
     </Link>
@@ -314,38 +323,38 @@ function ParticipantSessionCard({ card }: { card: SessionCard }) {
 
   return (
     <Link href={`/s/${local.id}`}>
-      <div className="bg-[#111113] border border-[#222226] rounded-2xl p-4 hover:border-[#2e2e34] active:scale-[0.98] transition-all">
+      <div className="bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 hover:border-[#e0d4c4] lift">
         <div className="flex items-center gap-3">
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
             isConfirmed
-              ? 'bg-[#00DF76]/15 border border-[#00DF76]/20'
+              ? 'bg-[#0bb673]/15 border border-[#0bb673]/20'
               : hasPaid
-              ? 'bg-yellow-500/10 border border-yellow-500/20'
-              : 'bg-[#18181b] border border-[#222226]'
+              ? 'bg-[#fef3c7] border border-[#fcd34d]'
+              : 'bg-[#f6f1ea] border border-[#ece2d5]'
           }`}>
             {isConfirmed
-              ? <CheckCircle2 className="w-4 h-4 text-[#00DF76]" />
+              ? <CheckCircle2 className="w-4 h-4 text-[#077f4e]" />
               : hasPaid
-              ? <Clock className="w-4 h-4 text-yellow-500" />
-              : <Clock className="w-4 h-4 text-[#76767f]" />
+              ? <Clock className="w-4 h-4 text-[#b45309]" />
+              : <Clock className="w-4 h-4 text-[#6b5f55]" />
             }
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm truncate">
               {local.restaurantName ?? 'Sin nombre'}
             </p>
-            <p className="text-xs text-[#76767f] mt-0.5">
+            <p className="text-xs text-[#6b5f55] mt-0.5">
               {date} · {local.hostName ?? 'Host'} te invitó
             </p>
           </div>
           <div className="text-right shrink-0">
             {myPayment && (
-              <p className={`money text-sm font-bold ${isConfirmed ? 'text-[#00DF76]' : 'text-[#c0c0c8]'}`}>
+              <p className={`money text-sm font-bold ${isConfirmed ? 'text-[#077f4e]' : 'text-[#4a423b]'}`}>
                 {formatCLP(myPayment.amount)}
               </p>
             )}
             <p className={`text-xs mt-0.5 ${
-              isConfirmed ? 'text-[#00DF76]' : hasPaid ? 'text-yellow-500' : 'text-[#76767f]'
+              isConfirmed ? 'text-[#077f4e]' : hasPaid ? 'text-[#b45309]' : 'text-[#6b5f55]'
             }`}>
               {isConfirmed ? 'Confirmado ✓' : hasPaid ? 'Pendiente' : 'Sin pagar'}
             </p>
@@ -361,12 +370,12 @@ function ParticipantSessionCard({ card }: { card: SessionCard }) {
 function EmptyState() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center py-16">
-      <div className="w-20 h-20 rounded-2xl bg-[#111113] border border-[#222226] flex items-center justify-center">
-        <Utensils className="w-9 h-9 text-[#2e2e34]" />
+      <div className="w-20 h-20 rounded-2xl bg-[#e7f9f0] flex items-center justify-center text-4xl">
+        🧾
       </div>
       <div>
-        <p className="font-semibold text-[#c0c0c8]">No tienes boletas aún</p>
-        <p className="text-sm text-[#76767f] mt-1 max-w-[200px] mx-auto leading-relaxed">
+        <p className="font-semibold text-[#4a423b]">No tienes boletas aún</p>
+        <p className="text-sm text-[#6b5f55] mt-1 max-w-[200px] mx-auto leading-relaxed">
           Crea una la próxima vez que salgas a comer
         </p>
       </div>

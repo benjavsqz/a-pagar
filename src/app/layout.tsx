@@ -1,25 +1,18 @@
 import type { Metadata, Viewport } from 'next'
-import { Manrope, Sora, Geist_Mono } from 'next/font/google'
+import { Plus_Jakarta_Sans, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/toast'
 import { PwaInstallBanner } from '@/components/pwa-install-banner'
 import './globals.css'
 
-// Cuerpo / UI — geométrica, limpia, "premium fintech"
-const manrope = Manrope({
+// Cuerpo + titulares — redondeada, cálida, "app de amigos"
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-manrope',
+  variable: '--font-jakarta',
   display: 'swap',
 })
 
-// Display / titulares — más carácter para los headlines
-const sora = Sora({
-  subsets: ['latin'],
-  variable: '--font-sora',
-  display: 'swap',
-})
-
-// Montos en plata — mono con tabular figures, estilo caja registradora
+// Montos en plata — mono con tabular figures, estilo boleta
 const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
@@ -50,15 +43,15 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#080809',
+  themeColor: '#fbf3ea',
   width: 'device-width',
   initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`h-full ${manrope.variable} ${sora.variable} ${geistMono.variable}`}>
-      <body className="min-h-full flex flex-col bg-[#08090b] text-[#f4f4f6] antialiased font-sans">
+    <html lang="es" className={`h-full ${jakarta.variable} ${geistMono.variable}`}>
+      <body className="min-h-full flex flex-col bg-[#fbf3ea] text-[#1a1614] antialiased font-sans">
         {children}
         <Toaster />
         <PwaInstallBanner />

@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import {
   CheckCircle2, Circle, Copy, Upload, Loader2, AlertCircle,
-  ArrowRight, Users, Minus, Plus,
+  ArrowRight, Users, Minus, Plus, CreditCard,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -114,31 +114,31 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="min-h-screen flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6">
         <Toaster />
-        <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#00DF76]/4 blur-[100px] rounded-full -z-10" />
+        <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-[#00DF76] flex items-center justify-center">
-              <span className="text-black text-xs font-black leading-none">$</span>
+            <div className="w-7 h-7 rounded-lg bg-[#0bb673] flex items-center justify-center">
+              <span className="text-white text-xs font-black leading-none">$</span>
             </div>
             <span className="text-xl font-black tracking-tight">A-Pagar</span>
           </div>
           <h1 className="text-xl font-bold">
             {session.restaurant_name ?? 'Dividiendo la cuenta'}
           </h1>
-          <p className="text-sm text-[#8a8a96] mt-1">
+          <p className="text-sm text-[#6b5f55] mt-1">
             {session.host_name} te invita
             {isEqual ? ' a dividir en partes iguales' : ' a marcar lo que pediste'}
           </p>
 
           {isEqual && sharePerPerson > 0 && (
-            <div className="mt-4 bg-[#8b7cff]/10 border border-[#8b7cff]/25 rounded-2xl px-4 py-3">
+            <div className="mt-4 bg-[#7c6cf0]/10 border border-[#7c6cf0]/25 rounded-2xl px-4 py-3">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <Users className="w-4 h-4 text-[#8b7cff]" />
-                <span className="text-xs text-[#8b7cff]/80 font-medium">Tu parte estimada</span>
+                <Users className="w-4 h-4 text-[#7c6cf0]" />
+                <span className="text-xs text-[#5b4dc7] font-medium">Tu parte estimada</span>
               </div>
-              <p className="money text-2xl font-black text-white">{formatCLP(sharePerPerson)}</p>
-              <p className="text-xs text-[#76767f] mt-1">
+              <p className="money text-2xl font-black text-[#1a1614]">{formatCLP(sharePerPerson)}</p>
+              <p className="text-xs text-[#6b5f55] mt-1">
                 {formatCLP(session.split_total ?? 0)} ÷ {session.split_n} personas
               </p>
             </div>
@@ -147,10 +147,10 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
         {participants.length > 0 && (
           <div className="w-full">
-            <p className="text-xs text-[#8a8a96] mb-2">Ya están adentro:</p>
+            <p className="text-xs text-[#6b5f55] mb-2">Ya están adentro:</p>
             <div className="flex flex-wrap gap-2">
               {existingNames.map(name => (
-                <span key={name} className="text-xs bg-[#18181b] border border-[#222226] rounded-full px-3 py-1 text-[#c0c0c8]">
+                <span key={name} className="text-xs bg-[#f6f1ea] border border-[#ece2d5] rounded-full px-3 py-1 text-[#4a423b]">
                   {name}
                 </span>
               ))}
@@ -214,17 +214,17 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         {/* Header */}
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-md bg-[#00DF76] flex items-center justify-center">
-              <span className="text-black text-[10px] font-black leading-none">$</span>
+            <div className="w-6 h-6 rounded-md bg-[#0bb673] flex items-center justify-center">
+              <span className="text-white text-[10px] font-black leading-none">$</span>
             </div>
-            <span className="text-base font-black tracking-tight text-[#00DF76]">A-Pagar</span>
+            <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
           </div>
           <h1 className="text-lg font-bold">{session.restaurant_name ?? 'La cuenta'}</h1>
-          <p className="text-sm text-[#8a8a96]">Marca lo que pediste, {me.name}</p>
+          <p className="text-sm text-[#6b5f55]">Marca lo que pediste, {me.name}</p>
         </div>
 
         {/* Items list */}
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 space-y-2 stagger">
           {itemGroups.map(({ name, units }) => {
             const isMulti = units.length > 1
             const isMine = units.some(u => myClaimedItemIds.has(u.id))
@@ -243,29 +243,29 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                   onClick={() => handleToggle(units)}
                   className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border transition-all active:scale-95 ${
                     isMine
-                      ? 'bg-[#00DF76]/10 border-[#00DF76]/40'
-                      : 'bg-[#111113] border-[#18181b] hover:border-[#2e2e34]'
+                      ? 'bg-[#0bb673]/10 border-[#0bb673]/40'
+                      : 'bg-[#ffffff] border-[#f6f1ea] hover:border-[#e0d4c4]'
                   }`}
                 >
                   {isMine
-                    ? <CheckCircle2 className="w-5 h-5 text-[#00DF76] shrink-0" />
-                    : <Circle className="w-5 h-5 text-[#76767f] shrink-0" />
+                    ? <CheckCircle2 className="w-5 h-5 text-[#077f4e] shrink-0 check-pop" />
+                    : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />
                   }
                   <div className="flex-1 text-left min-w-0">
-                    <p className={`text-sm font-medium truncate ${isMine ? 'text-white' : 'text-[#c0c0c8]'}`}>
+                    <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>
                       {item.name}
                     </p>
                     {claimers.length > 1 && (
-                      <p className="text-xs text-[#8a8a96] mt-0.5">
+                      <p className="text-xs text-[#6b5f55] mt-0.5">
                         Compartido con {claimers.filter(p => p.id !== me.id).map(p => p.name).join(', ')}
                       </p>
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${isMine ? 'text-[#00DF76]' : 'text-[#8a8a96]'}`}>
+                    <p className={`text-sm font-bold ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>
                       {formatCLP(pricePerPerson)}
                     </p>
-                    {itemClaims.length > 1 && <p className="text-xs text-[#76767f]">÷ {itemClaims.length}</p>}
+                    {itemClaims.length > 1 && <p className="text-xs text-[#6b5f55]">÷ {itemClaims.length}</p>}
                   </div>
                 </button>
               )
@@ -289,44 +289,44 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                 key={name}
                 className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
                   isMine
-                    ? 'bg-[#00DF76]/10 border-[#00DF76]/40'
-                    : 'bg-[#111113] border-[#18181b]'
+                    ? 'bg-[#0bb673]/10 border-[#0bb673]/40'
+                    : 'bg-[#ffffff] border-[#f6f1ea]'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   {isMine
-                    ? <CheckCircle2 className="w-5 h-5 text-[#00DF76] shrink-0" />
-                    : <Circle className="w-5 h-5 text-[#76767f] shrink-0" />
+                    ? <CheckCircle2 className="w-5 h-5 text-[#077f4e] shrink-0 check-pop" />
+                    : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />
                   }
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isMine ? 'text-white' : 'text-[#c0c0c8]'}`}>
+                    <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>
                       {name}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right">
-                      <span className="text-xs font-semibold bg-[#222226] text-[#8a8a96] px-2 py-0.5 rounded-full">×{units.length}</span>
-                      <p className={`text-sm font-bold mt-0.5 ${isMine ? 'text-[#00DF76]' : 'text-[#8a8a96]'}`}>
+                      <span className="text-xs font-semibold bg-[#ece2d5] text-[#6b5f55] px-2 py-0.5 rounded-full">×{units.length}</span>
+                      <p className={`text-sm font-bold mt-0.5 ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>
                         {formatCLP(unitPrice)} c/u
                       </p>
                     </div>
-                    <div className="flex items-center bg-[#0d0d0f] border border-[#222226] rounded-lg">
+                    <div className="flex items-center bg-[#f6f1ea] border border-[#ece2d5] rounded-lg">
                       <button
                         onClick={handleRemoveOne}
                         disabled={myCount === 0}
                         aria-label="Quitar uno"
-                        className="w-7 h-7 flex items-center justify-center text-[#8a8a96] hover:text-white disabled:opacity-20 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-20 transition-colors"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className={`w-5 text-center text-xs font-bold tabular-nums select-none ${myCount > 0 ? 'text-[#00DF76]' : 'text-[#76767f]'}`}>
+                      <span className={`w-5 text-center text-xs font-bold tabular-nums select-none ${myCount > 0 ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>
                         {myCount}
                       </span>
                       <button
                         onClick={handleAdd}
                         disabled={freeCount === 0}
                         aria-label="Agregar uno"
-                        className="w-7 h-7 flex items-center justify-center text-[#8a8a96] hover:text-[#00DF76] disabled:opacity-20 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center text-[#6b5f55] hover:text-[#077f4e] disabled:opacity-20 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -350,10 +350,10 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                         key={unit.id}
                         className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                           isMyUnit
-                            ? 'bg-[#00DF76] text-black'
+                            ? 'bg-[#0bb673] text-white'
                             : unitClaimers.length > 0
-                            ? 'bg-[#222226] text-[#c0c0c8]'
-                            : 'border border-dashed border-[#2e2e34] text-[#76767f]'
+                            ? 'bg-[#ece2d5] text-[#4a423b]'
+                            : 'border border-dashed border-[#e0d4c4] text-[#6b5f55]'
                         }`}
                       >
                         {chipLabel}
@@ -367,19 +367,19 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Sticky total */}
-        <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-[#080809] from-70% to-transparent">
+        <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-[#fbf3ea] from-70% to-transparent">
           <Card className="p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-[#8a8a96]">Tu total a pagar</p>
-                <p className="money text-2xl font-black text-[#00DF76]">{formatCLP(summary.total)}</p>
+                <p className="text-xs text-[#6b5f55]">Tu total a pagar</p>
+                <p className="money text-2xl font-black text-[#077f4e]">{formatCLP(summary.total)}</p>
                 {session.propina_pct > 0 && summary.items.length > 0 && (
-                  <p className="text-xs text-[#8a8a96]">
+                  <p className="text-xs text-[#6b5f55]">
                     {formatCLP(summary.subtotal)} + propina {formatCLP(summary.propina)}
                   </p>
                 )}
               </div>
-              <div className="text-right text-xs text-[#8a8a96]">
+              <div className="text-right text-xs text-[#6b5f55]">
                 <p>{summary.items.length} ítem{summary.items.length !== 1 ? 's' : ''}</p>
                 <p>de {items.length} en la boleta</p>
               </div>
@@ -417,6 +417,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         accountType && `Tipo de cuenta: ${accountType}`,
         session.host_rut && `RUT: ${session.host_rut}`,
         session.host_account && `Nro de cuenta: ${session.host_account}`,
+        session.host_email && `Correo: ${session.host_email}`,
         `Monto: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(myTotal)}`,
       ].filter(Boolean).join('\n')
       copyToClipboard(lines)
@@ -505,37 +506,49 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         <Toaster />
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-md bg-[#00DF76] flex items-center justify-center">
-              <span className="text-black text-[10px] font-black leading-none">$</span>
+            <div className="w-6 h-6 rounded-md bg-[#0bb673] flex items-center justify-center">
+              <span className="text-white text-[10px] font-black leading-none">$</span>
             </div>
-            <span className="text-base font-black tracking-tight text-[#00DF76]">A-Pagar</span>
+            <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
           </div>
           <h1 className="font-display text-xl font-bold">Tu total a pagar</h1>
         </div>
 
         {/* Total */}
         <Card variant="premium" className="p-4 text-center">
-          <p className="text-xs text-[#8a8a96] mb-1">Transferir a {session.host_name}</p>
-          <p className="money text-4xl font-black text-[#00DF76]" style={{ animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(myTotal)}</p>
+          <p className="text-xs text-[#6b5f55] mb-1">Transferir a {session.host_name}</p>
+          <p className="money text-4xl font-black text-[#077f4e]" style={{ animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(myTotal)}</p>
           {!isEqual && session.propina_pct > 0 && (
-            <p className="text-xs text-[#8a8a96] mt-1">
+            <p className="text-xs text-[#6b5f55] mt-1">
               {formatCLP(summary.subtotal)} + propina {formatCLP(summary.propina)}
             </p>
           )}
           {isEqual && (
-            <p className="text-xs text-[#8a8a96] mt-1">
+            <p className="text-xs text-[#6b5f55] mt-1">
               1/{session.split_n} del total de {formatCLP(session.split_total ?? 0)}
             </p>
           )}
         </Card>
 
+        {/* Pago de 1 toque — solo si el host dejó un link de pago */}
+        {session.host_payment_link && (
+          <a
+            href={/^https?:\/\//i.test(session.host_payment_link) ? session.host_payment_link : `https://${session.host_payment_link}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 h-14 rounded-full bg-gradient-to-b from-[#0bb673] to-[#089457] text-white font-bold text-base shadow-[0_8px_22px_-6px_rgba(11,182,115,0.55)] active:scale-[0.97] transition-transform"
+          >
+            <CreditCard className="w-5 h-5" /> Pagar ahora <ArrowRight className="w-4 h-4" />
+          </a>
+        )}
+
         {/* Bank details */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-[#8a8a96]">Datos para transferir</p>
+            <p className="text-sm text-[#6b5f55]">Datos para transferir</p>
             <button
               onClick={handleCopyAll}
-              className="flex items-center gap-1.5 text-xs text-[#00DF76] hover:text-[#00b868] font-medium transition-colors active:scale-95"
+              className="flex items-center gap-1.5 text-xs text-[#077f4e] hover:text-[#0a8f5c] font-medium transition-colors active:scale-95"
             >
               <Copy className="w-3.5 h-3.5" /> Copiar todo
             </button>
@@ -546,17 +559,18 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             { label: 'Tipo de cuenta', value: accountType },
             { label: 'RUT', value: session.host_rut },
             { label: 'Nro de cuenta', value: session.host_account },
+            { label: 'Correo', value: session.host_email },
           ].filter(d => d.value).map(({ label, value }) => (
             <button
               key={label}
               onClick={() => handleCopy(value!, label)}
-              className="w-full flex items-center justify-between bg-[#111113] border border-[#18181b] rounded-xl px-4 py-3 hover:border-[#2e2e34] active:scale-95 transition-all"
+              className="w-full flex items-center justify-between bg-[#ffffff] border border-[#f6f1ea] rounded-xl px-4 py-3 hover:border-[#e0d4c4] active:scale-95 transition-all"
             >
               <div className="text-left">
-                <p className="text-xs text-[#8a8a96]">{label}</p>
+                <p className="text-xs text-[#6b5f55]">{label}</p>
                 <p className="text-sm font-medium">{value}</p>
               </div>
-              <Copy className="w-4 h-4 text-[#8a8a96]" />
+              <Copy className="w-4 h-4 text-[#6b5f55]" />
             </button>
           ))}
         </div>
@@ -564,11 +578,11 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         {/* Items breakdown — only for per-item mode */}
         {!isEqual && summary.items.length > 0 && (
           <Card className="p-3">
-            <p className="text-xs text-[#8a8a96] mb-2">Lo que marcaste</p>
+            <p className="text-xs text-[#6b5f55] mb-2">Lo que marcaste</p>
             {summary.items.map(item => (
               <div key={item.id} className="flex justify-between text-sm py-0.5">
-                <span className="text-[#c0c0c8] truncate">{item.name}</span>
-                <span className="text-[#8a8a96] shrink-0 ml-2">{formatCLP(item.price_per_person)}</span>
+                <span className="text-[#4a423b] truncate">{item.name}</span>
+                <span className="text-[#6b5f55] shrink-0 ml-2">{formatCLP(item.price_per_person)}</span>
               </div>
             ))}
           </Card>
@@ -592,7 +606,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           {!isEqual && (
             <button
               onClick={() => setStep('items')}
-              className="w-full text-sm text-[#8a8a96] hover:text-[#c0c0c8] py-2 transition-colors"
+              className="w-full text-sm text-[#6b5f55] hover:text-[#4a423b] py-2 transition-colors"
             >
               ← Volver a los ítems
             </button>
@@ -608,24 +622,24 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
       <Toaster />
 
       {/* Success glow */}
-      <div className="pointer-events-none fixed inset-0 bg-[#00DF76]/4 blur-[120px] -z-10" />
+      <div className="pointer-events-none fixed inset-0 bg-[#ffd9c7]/40 blur-[120px] -z-10" />
 
       {/* Sello animado con anillos que se expanden */}
       <div className="relative" style={{ animation: 'pop 0.6s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-        <span className="absolute inset-0 rounded-full border border-[#00DF76]/30 animate-ping" style={{ animationDuration: '2s' }} />
-        <span className="absolute -inset-3 rounded-full border border-[#00DF76]/15 animate-ping" style={{ animationDuration: '2.6s' }} />
-        <div className="relative w-24 h-24 rounded-full bg-[#00DF76]/10 border-2 border-[#00DF76]/30 flex items-center justify-center brand-glow">
-          <CheckCircle2 className="w-12 h-12 text-[#00DF76]" />
+        <span className="absolute inset-0 rounded-full border border-[#0bb673]/30 animate-ping" style={{ animationDuration: '2s' }} />
+        <span className="absolute -inset-3 rounded-full border border-[#0bb673]/15 animate-ping" style={{ animationDuration: '2.6s' }} />
+        <div className="relative w-24 h-24 rounded-full bg-[#0bb673]/10 border-2 border-[#0bb673]/30 flex items-center justify-center brand-glow">
+          <CheckCircle2 className="w-12 h-12 text-[#077f4e]" />
         </div>
       </div>
 
       <div style={{ animation: 'fade-up 0.5s cubic-bezier(0.22,1,0.36,1) 0.15s both' }}>
         <h1 className="font-display text-3xl font-black">¡Listo!</h1>
-        <p className="text-[#9a9aa6] mt-2">
+        <p className="text-[#6b5f55] mt-2">
           Le avisamos a {session.host_name} que ya transferiste.
         </p>
-        <p className="money text-lg font-bold text-white mt-3">{formatCLP(myTotal)}</p>
-        <p className="text-sm text-[#76767f]">
+        <p className="money text-lg font-bold text-[#1a1614] mt-3">{formatCLP(myTotal)}</p>
+        <p className="text-sm text-[#6b5f55]">
           {session.restaurant_name ? `${session.restaurant_name} · ` : ''}{me.name}
         </p>
       </div>
@@ -649,7 +663,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <Loader2 className="w-8 h-8 text-[#00DF76] animate-spin" />
+      <Loader2 className="w-8 h-8 text-[#077f4e] animate-spin" />
     </div>
   )
 }
@@ -657,9 +671,9 @@ function LoadingScreen() {
 function ErrorScreen({ message }: { message: string }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
-      <AlertCircle className="w-10 h-10 text-red-500" />
+      <AlertCircle className="w-10 h-10 text-[#e5484d]" />
       <p className="font-medium">{message}</p>
-      <Link href="/" className="text-sm text-[#8a8a96] hover:text-white transition-colors">← Volver al inicio</Link>
+      <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors">← Volver al inicio</Link>
     </div>
   )
 }

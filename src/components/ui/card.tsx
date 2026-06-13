@@ -4,10 +4,10 @@ type Variant = 'default' | 'elevated' | 'premium'
 
 const variantClass: Record<Variant, string> = {
   // Plana — para listas densas
-  default: 'bg-[#101216] border border-[#23262d]',
+  default: 'bg-white border border-[#ece2d5]',
   // Con sombra — separa del fondo
-  elevated: 'bg-[#101216] border border-[#23262d] shadow-[0_4px_16px_rgba(0,0,0,0.35),0_1px_3px_rgba(0,0,0,0.4)]',
-  // Highlight sutil arriba + sombra — para tarjetas "héroe"
+  elevated: 'bg-white border border-[#ece2d5] shadow-[0_8px_24px_rgba(150,100,60,0.1)]',
+  // Highlight + sombra cálida — para tarjetas "héroe"
   premium: 'card-premium',
 }
 

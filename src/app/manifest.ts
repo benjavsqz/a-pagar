@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Sube la foto de la boleta, comparte el link y cada uno paga su parte. Sin apps.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#080809',
-    theme_color: '#080809',
+    background_color: '#fbf3ea',
+    theme_color: '#fbf3ea',
     orientation: 'portrait',
     categories: ['finance', 'utilities'],
     icons: [

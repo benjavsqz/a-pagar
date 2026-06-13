@@ -33,9 +33,9 @@ export function Toaster() {
   return (
     <div role="status" aria-live="polite" className={cn(
       'fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl z-50 transition-all',
-      current.type === 'success' && 'bg-[#00DF76] text-black',
-      current.type === 'error' && 'bg-[#ff4d57] text-white',
-      current.type === 'info' && 'bg-[#222226] text-white',
+      current.type === 'success' && 'bg-[#0bb673] text-white',
+      current.type === 'error' && 'bg-[#e5484d] text-[#1a1614]',
+      current.type === 'info' && 'bg-[#ece2d5] text-[#1a1614]',
     )}>
       {current.message}
     </div>

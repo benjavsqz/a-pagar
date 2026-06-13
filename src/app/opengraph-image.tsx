@@ -15,7 +15,7 @@ export default function OgImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#080809',
+          background: '#fbf3ea',
           gap: 36,
         }}
       >
@@ -28,7 +28,7 @@ export default function OgImage() {
         >
           <div
             style={{
-              background: '#00DF76',
+              background: '#0bb673',
               width: 96,
               height: 96,
               display: 'flex',
@@ -37,9 +37,9 @@ export default function OgImage() {
               borderRadius: 24,
             }}
           >
-            <span style={{ color: '#000', fontSize: 64, fontWeight: 900 }}>$</span>
+            <span style={{ color: '#fff', fontSize: 64, fontWeight: 900 }}>$</span>
           </div>
-          <span style={{ color: '#f0f0f2', fontSize: 72, fontWeight: 900, letterSpacing: -2 }}>
+          <span style={{ color: '#1a1614', fontSize: 72, fontWeight: 900, letterSpacing: -2 }}>
             A-Pagar
           </span>
         </div>
@@ -51,10 +51,10 @@ export default function OgImage() {
             gap: 8,
           }}
         >
-          <span style={{ color: '#f0f0f2', fontSize: 52, fontWeight: 700 }}>
-            Divide la cuenta. <span style={{ color: '#00DF76', marginLeft: 14 }}>Sin el drama.</span>
+          <span style={{ color: '#1a1614', fontSize: 52, fontWeight: 700 }}>
+            Divide la cuenta. <span style={{ color: '#0a8f5c', marginLeft: 14 }}>Sin drama.</span>
           </span>
-          <span style={{ color: '#8a8a96', fontSize: 30 }}>
+          <span style={{ color: '#6b5f55', fontSize: 30 }}>
             Foto de la boleta → link al grupo → cada uno paga lo suyo
           </span>
         </div>
