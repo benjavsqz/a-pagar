@@ -25,7 +25,7 @@ export function ItemRow({
         value={name}
         onChange={e => onNameChange(e.target.value)}
         className={cn(
-          'w-full h-9 bg-[#f6f1ea] border border-[#f1e9dd] rounded-lg px-3 text-sm text-[#1a1614] placeholder:text-[#8a7d71]',
+          'w-full h-9 bg-[#f6f1ea] border border-[#f1e9dd] rounded-lg px-3 text-sm text-[#1a1614] placeholder:text-[#6b5f55]',
           'focus:outline-none focus:border-[#0bb673]/50 focus:shadow-[0_0_0_3px_rgba(11,182,115,0.06)] transition-all',
         )}
       />
@@ -62,7 +62,7 @@ export function ItemRow({
             placeholder="0"
             value={price}
             onChange={e => onPriceChange(e.target.value)}
-            className="w-full h-8 bg-[#f6f1ea] border border-[#f1e9dd] rounded-lg pl-6 pr-3 text-sm text-[#1a1614] placeholder:text-[#8a7d71] focus:outline-none focus:border-[#0bb673]/50 focus:shadow-[0_0_0_3px_rgba(11,182,115,0.06)] transition-all"
+            className="w-full h-8 bg-[#f6f1ea] border border-[#f1e9dd] rounded-lg pl-6 pr-3 text-sm text-[#1a1614] placeholder:text-[#6b5f55] focus:outline-none focus:border-[#0bb673]/50 focus:shadow-[0_0_0_3px_rgba(11,182,115,0.06)] transition-all"
           />
         </div>
 

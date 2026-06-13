@@ -183,15 +183,15 @@ export function ItemsClaimList({
               {/* Botón Dividir — al costado */}
               <button
                 onClick={() => toggleSplit(item.id)}
-                aria-label="Dividir este ítem"
+                aria-label="Dividir este ítem entre varias personas"
                 aria-pressed={splitView}
-                className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-all active:scale-90 ${
+                className={`shrink-0 h-9 px-2.5 rounded-xl flex items-center gap-1 border text-xs font-medium transition-all active:scale-90 ${
                   splitView
                     ? 'bg-[#0bb673]/15 border-[#0bb673]/40 text-[#077f4e]'
                     : 'bg-[#f6f1ea] border-[#ece2d5] text-[#6b5f55] hover:text-[#1a1614]'
                 }`}
               >
-                <Split className="w-4 h-4" />
+                <Split className="w-3.5 h-3.5" /> Dividir
               </button>
             </div>
 
