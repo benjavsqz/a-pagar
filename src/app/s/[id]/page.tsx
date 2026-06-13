@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import {
   CheckCircle2, Copy, Upload, Loader2, AlertCircle,
-  ArrowRight, Users, CreditCard,
+  ArrowRight, Users, CreditCard, Clock,
 } from 'lucide-react'
 import { ItemsClaimList } from '@/components/session/items-claim-list'
 import Link from 'next/link'
@@ -64,8 +64,57 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
   // ── PASO 1: ¿Quién eres? ───────────────────────────────────────────────────
   if (step === 'who') {
     if (session.status === 'closed') {
+      // Callejón evitado (audits/04-ux-a11y.md, SEV-1): aunque la boleta esté
+      // cerrada, el invitado que aún no transfirió puede ver los datos del host
+      // para coordinar y pagar directo, en vez de quedar en una pantalla muerta.
+      const bankStr = session.host_bank ?? ''
+      const hasCombined = bankStr.includes(' · ')
+      const closedDetails = [
+        { label: 'Nombre', value: session.host_name },
+        { label: 'Banco', value: hasCombined ? bankStr.split(' · ')[0] : (bankStr || null) },
+        { label: 'Tipo de cuenta', value: hasCombined ? bankStr.split(' · ')[1] : null },
+        { label: 'RUT', value: session.host_rut },
+        { label: 'Nro de cuenta', value: session.host_account },
+        { label: 'Correo', value: session.host_email },
+      ].filter(d => d.value)
+      const copyClosed = async (text: string, label: string) => {
+        await copyToClipboard(text)
+        toast(`${label} copiado ✓`)
+      }
       return (
-        <ErrorScreen message={`Esta boleta${session.restaurant_name ? ` de ${session.restaurant_name}` : ''} ya fue cerrada por ${session.host_name}.`} />
+        <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
+          <Toaster />
+          <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
+          <div className="text-center mt-6">
+            <div className="w-12 h-12 rounded-2xl bg-[#ece2d5] flex items-center justify-center mx-auto mb-3">
+              <Clock className="w-6 h-6 text-[#6b5f55]" />
+            </div>
+            <h1 className="font-display text-xl font-bold">Boleta cerrada</h1>
+            <p className="text-sm text-[#6b5f55] mt-1">
+              {session.restaurant_name ? `La cuenta de ${session.restaurant_name}` : 'Esta cuenta'} ya fue cerrada por {session.host_name}. Si aún no transferiste tu parte, coordínala directo con {session.host_name}{closedDetails.length > 1 ? ' usando estos datos:' : '.'}
+            </p>
+          </div>
+          {closedDetails.length > 1 ? (
+            <div className="space-y-2">
+              {closedDetails.map(({ label, value }) => (
+                <button
+                  key={label}
+                  onClick={() => copyClosed(value!, label)}
+                  className="w-full flex items-center justify-between bg-[#ffffff] border border-[#f6f1ea] rounded-xl px-4 py-3 hover:border-[#e0d4c4] active:scale-95 transition-all"
+                >
+                  <div className="text-left">
+                    <p className="text-xs text-[#6b5f55]">{label}</p>
+                    <p className="text-sm font-medium">{value}</p>
+                  </div>
+                  <Copy className="w-4 h-4 text-[#6b5f55]" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-[#6b5f55] text-center">El anfitrión no dejó datos de transferencia acá. Contáctalo directamente.</p>
+          )}
+          <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors text-center py-2 mt-auto">← Volver al inicio</Link>
+        </div>
       )
     }
 
