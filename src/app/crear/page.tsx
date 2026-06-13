@@ -244,18 +244,22 @@ export default function CrearPage() {
       if (itemsErr) throw new Error(itemsErr.message)
 
       // El host pasa a ser un participante (is_host) para poder marcar lo que
-      // consumió. Si la migración 007 no está aplicada, se omite (modo legacy:
-      // el host no es participante y su consumo se asume como el resto).
+      // consumió. Se crea vía RPC SECURITY DEFINER que valida el host_token: el
+      // cliente NO puede insertar is_host=true directamente (migración 008).
+      // Requiere el token; si no hay (migración 005/008 sin aplicar) se omite
+      // (modo legacy: el host no es participante y su consumo se asume como resto).
       let hostParticipantId: string | undefined
-      const { data: hostP, error: hostPErr } = await supabase
-        .from('participants')
-        .insert({ session_id: session.id, name: hostName.trim(), is_host: true })
-        .select('id')
-        .single()
-      if (hostPErr) {
-        console.warn('No se pudo crear participante host (¿migración 007 sin aplicar?):', hostPErr.message)
-      } else {
-        hostParticipantId = hostP?.id as string | undefined
+      if (hostToken) {
+        const { data: hostPId, error: hostPErr } = await supabase.rpc('register_host_participant', {
+          p_session_id: session.id,
+          p_name: hostName.trim(),
+          p_token: hostToken,
+        })
+        if (hostPErr) {
+          console.warn('No se pudo crear participante host (¿migración 008 sin aplicar?):', hostPErr.message)
+        } else {
+          hostParticipantId = (hostPId as string | null) ?? undefined
+        }
       }
 
       saveLocalSession({

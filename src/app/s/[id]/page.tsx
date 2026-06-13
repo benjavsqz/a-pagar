@@ -305,6 +305,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             sessionId: id,
             event: 'payment_received',
             payload: {
+              participantId: me.id,
               participantName: me.name,
               amount: formatCLP(myTotal),
               url: `/host/${id}`,
@@ -339,6 +340,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             sessionId: id,
             event: 'payment_received',
             payload: {
+              participantId: me.id,
               participantName: me.name,
               amount: formatCLP(myTotal),
               url: `/host/${id}`,

@@ -4,9 +4,6 @@ import { createClient } from '@/lib/supabase/client'
 import { getLocalSession } from '@/lib/local-sessions'
 import type { Session, Item, Participant, Claim, Payment, SessionWithData } from '@/types'
 
-// PGRST202 = función RPC inexistente (migración 005 sin aplicar) → modo legacy
-const RPC_MISSING = 'PGRST202'
-
 export function useSession(sessionId: string) {
   const [data, setData] = useState<SessionWithData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,9 +50,9 @@ export function useSession(sessionId: string) {
 
     const channel = supabase
       .channel(`session:${sessionId}`)
-      // claims sin filtro: la columna claims.session_id recién existe desde la
-      // migración 005; cuando esté aplicada en prod se puede filtrar igual que abajo
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, () => load())
+      // claims.session_id existe desde la migración 005 (lo rellena un trigger),
+      // así filtramos por sesión y no recargamos ante claims de otras boletas.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'claims', filter: `session_id=eq.${sessionId}` }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `session_id=eq.${sessionId}` }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `session_id=eq.${sessionId}` }, () => load())
       .subscribe()
@@ -113,24 +110,15 @@ export function useSession(sessionId: string) {
     const supabase = createClient()
     const hostToken = getLocalSession(sessionId)?.hostToken ?? null
 
-    // Vía segura: RPC que valida el token de anfitrión (migración 005)
+    // Vía segura y única: RPC que valida el token de anfitrión (migraciones 005/008).
+    // Sin token válido no se confirma — el modo legacy directo se eliminó por
+    // permitir confirmar pagos ajenos (audits/01-seguridad.md, hallazgo crítico).
     const { error: rpcError } = await supabase.rpc('confirm_payment', {
       p_session_id: sessionId,
       p_participant_id: participantId,
       p_token: hostToken,
     })
-
-    if (rpcError && rpcError.code === RPC_MISSING) {
-      // Modo legacy: update directo (políticas previas a la migración 005)
-      const { error } = await supabase
-        .from('payments')
-        .update({ confirmed_by_host: true })
-        .eq('session_id', sessionId)
-        .eq('participant_id', participantId)
-      if (error) return error.message
-    } else if (rpcError) {
-      return rpcError.message
-    }
+    if (rpcError) return rpcError.message
 
     // Optimistic local update so UI reflects immediately
     setData(prev => {
@@ -156,17 +144,7 @@ export function useSession(sessionId: string) {
       p_session_id: sessionId,
       p_token: hostToken,
     })
-
-    if (rpcError && rpcError.code === RPC_MISSING) {
-      // Modo legacy: update directo (solo funciona antes de la migración 004)
-      const { error } = await supabase
-        .from('sessions')
-        .update({ status: 'closed' })
-        .eq('id', sessionId)
-      if (error) return error.message
-    } else if (rpcError) {
-      return rpcError.message
-    }
+    if (rpcError) return rpcError.message
 
     setData(prev => prev
       ? { ...prev, session: { ...prev.session, status: 'closed' } }

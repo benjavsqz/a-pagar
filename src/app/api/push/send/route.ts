@@ -48,6 +48,27 @@ export async function POST(req: NextRequest) {
     // pública de push_subscriptions; si la key no está, caemos al anon.
     const supabase = createAdminClient() ?? await createClient()
 
+    // Autorización sin auth: solo se permite notificar eventos que correspondan
+    // a un estado REAL en la DB. Sin esto, cualquiera con la anon key podía
+    // disparar notificaciones arbitrarias (audits/01-seguridad.md, crítico push).
+    if (!payload.participantId) {
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    }
+    const { data: pay } = await supabase
+      .from('payments')
+      .select('confirmed_by_host')
+      .eq('session_id', sessionId)
+      .eq('participant_id', payload.participantId)
+      .maybeSingle()
+    if (!pay) {
+      // No hay pago registrado para ese participante → notificación no legítima
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+    if (event === 'payment_confirmed' && pay.confirmed_by_host !== true) {
+      // Solo se notifica "confirmado" si el host realmente lo confirmó en la DB
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
     // Determine which role to notify
     const targetRole = event === 'payment_received' ? 'host' : 'participant'
 
