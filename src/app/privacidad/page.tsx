@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacidadPage() {
   return (
-    <main className="min-h-screen max-w-md mx-auto px-5 py-6">
+    <main className="min-h-dvh max-w-md mx-auto px-5 py-6">
       <div className="flex items-center gap-3 mb-8">
         <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]">
           <ChevronLeft className="w-5 h-5" />

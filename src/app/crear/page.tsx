@@ -243,6 +243,21 @@ export default function CrearPage() {
       const { error: itemsErr } = await supabase.from('items').insert(dbItems)
       if (itemsErr) throw new Error(itemsErr.message)
 
+      // El host pasa a ser un participante (is_host) para poder marcar lo que
+      // consumió. Si la migración 007 no está aplicada, se omite (modo legacy:
+      // el host no es participante y su consumo se asume como el resto).
+      let hostParticipantId: string | undefined
+      const { data: hostP, error: hostPErr } = await supabase
+        .from('participants')
+        .insert({ session_id: session.id, name: hostName.trim(), is_host: true })
+        .select('id')
+        .single()
+      if (hostPErr) {
+        console.warn('No se pudo crear participante host (¿migración 007 sin aplicar?):', hostPErr.message)
+      } else {
+        hostParticipantId = hostP?.id as string | undefined
+      }
+
       saveLocalSession({
         id: session.id,
         role: 'host',
@@ -251,6 +266,7 @@ export default function CrearPage() {
         splitMode: 'items',
         createdAt: session.created_at,
         hostToken,
+        hostParticipantId,
       })
 
       router.push(`/host/${session.id}`)
@@ -337,7 +353,7 @@ export default function CrearPage() {
 
   if (splitMode === null) {
     return (
-      <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
+      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
         <Toaster />
         <div className="flex items-center gap-3 mb-8">
           <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]">
@@ -413,7 +429,7 @@ export default function CrearPage() {
 
   if (splitMode === 'items') {
     return (
-      <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
+      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
         <Toaster />
         <div className="flex items-center gap-3 mb-2">
           <button
@@ -598,7 +614,7 @@ export default function CrearPage() {
   const sharePerPerson = nNum > 0 ? Math.ceil(totalNum / nNum) : 0
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
+    <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
       <Toaster />
       <div className="flex items-center gap-3 mb-2">
         <button

@@ -9,6 +9,8 @@ export interface LocalSessionEntry {
   createdAt: string
   // host-specific: token secreto para confirmar pagos / cerrar la boleta
   hostToken?: string
+  // host-specific: id del participante "host" (para marcar su propio consumo)
+  hostParticipantId?: string
   // participant-specific
   participantId?: string
   participantName?: string

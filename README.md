@@ -46,7 +46,7 @@ VAPID_SUBJECT=                    # mailto:tu@correo.com
 
 ### Base de datos
 
-Ejecutar las migraciones de `supabase/migrations/` en orden (001 → 005) en el SQL Editor de Supabase. La 004 (RLS) y la 005 (host token + bucket privado) son de seguridad y **obligatorias** en producción.
+Ejecutar las migraciones de `supabase/migrations/` en orden (001 → 007) en el SQL Editor de Supabase. La 004 (RLS) y la 005 (host token + bucket privado) son de seguridad y **obligatorias** en producción. La 007 (`is_host`) habilita que el anfitrión marque su propio consumo; sin ella la app corre en modo legacy (el host no es participante).
 
 ## Estructura
 

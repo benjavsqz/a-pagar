@@ -43,29 +43,44 @@ export default function CuentaPage() {
       const [sessionsRes, itemsRes, participantsRes, paymentsRes, claimsRes] = await Promise.all([
         supabase.from('sessions').select('*').in('id', ids),
         supabase.from('items').select('session_id, id, price').in('session_id', ids),
-        supabase.from('participants').select('session_id, id').in('session_id', ids),
+        supabase.from('participants').select('*').in('session_id', ids),
         supabase.from('payments').select('session_id, participant_id, amount, confirmed_by_host').in('session_id', ids),
-        supabase.from('claims').select('session_id, item_id').in('session_id', ids),
+        supabase.from('claims').select('session_id, item_id, participant_id').in('session_id', ids),
       ])
 
       const sessMap = Object.fromEntries(
         (sessionsRes.data ?? []).map(s => [s.id, s as Session])
       )
 
-      // Ítems que tienen al menos un claim → su precio sí se cobra
-      const claimedItemIds = new Set((claimsRes.data ?? []).map(c => c.item_id))
+      // El consumo del host (participante is_host) NO se cobra: sus claims
+      // cuentan para dividir ÷N pero no suman al monto por cobrar.
+      const hostIds = new Set(
+        (participantsRes.data ?? []).filter(p => p.is_host).map(p => p.id)
+      )
+
+      // Claims por ítem: total (para el ÷N) y cuántos son de invitados (sí se cobran)
+      const itemClaimCount: Record<string, { total: number; guests: number }> = {}
+      for (const c of claimsRes.data ?? []) {
+        const e = (itemClaimCount[c.item_id] ??= { total: 0, guests: 0 })
+        e.total++
+        if (!hostIds.has(c.participant_id)) e.guests++
+      }
 
       const itemTotals: Record<string, number> = {}
       const claimedTotals: Record<string, number> = {}
       for (const item of itemsRes.data ?? []) {
         itemTotals[item.session_id] = (itemTotals[item.session_id] ?? 0) + item.price
-        if (claimedItemIds.has(item.id)) {
-          claimedTotals[item.session_id] = (claimedTotals[item.session_id] ?? 0) + item.price
+        const cc = itemClaimCount[item.id]
+        if (cc && cc.guests > 0) {
+          // Lo que deben los invitados por este ítem = precio/total × (claims de invitados)
+          claimedTotals[item.session_id] =
+            (claimedTotals[item.session_id] ?? 0) + (item.price / cc.total) * cc.guests
         }
       }
 
       const participantCounts: Record<string, number> = {}
       for (const p of participantsRes.data ?? []) {
+        if (p.is_host) continue // el host no se cuenta como alguien que paga
         participantCounts[p.session_id] = (participantCounts[p.session_id] ?? 0) + 1
       }
 
@@ -137,7 +152,7 @@ export default function CuentaPage() {
   const isEmpty = cards.length === 0
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6 pb-24">
+    <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 pb-24">
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 

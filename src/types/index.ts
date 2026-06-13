@@ -32,6 +32,7 @@ export interface Participant {
   session_id: string
   name: string
   created_at: string
+  is_host?: boolean // true para el participante "anfitrión" (marca su consumo, no se cobra)
 }
 
 export interface Claim {

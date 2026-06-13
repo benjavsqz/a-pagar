@@ -5,7 +5,7 @@ import { Camera, Share2, CircleCheck, ScanLine, Users } from 'lucide-react'
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col max-w-md mx-auto px-5 relative overflow-hidden">
+    <main className="min-h-dvh flex flex-col max-w-md mx-auto px-5 relative overflow-hidden">
 
       {/* Warm ambient blobs */}
       <div className="pointer-events-none fixed -top-20 -left-24 w-[340px] h-[340px] bg-[#ffd9c7]/50 blur-[90px] rounded-full -z-10" />
@@ -30,7 +30,7 @@ export default function Home() {
       {/* Hero */}
       <div className="flex-1 flex flex-col justify-center gap-9 py-6">
         <div className="space-y-4" style={{ animation: 'fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both' }}>
-          <h1 className="text-[3.1rem] font-extrabold leading-[1.0] tracking-tight">
+          <h1 className="text-[clamp(2.4rem,12vw,3.1rem)] font-extrabold leading-[1.0] tracking-tight">
             Divide la<br />
             cuenta<br />
             <span className="text-[#077f4e]">sin drama</span> <span className="inline-block">🎉</span>
