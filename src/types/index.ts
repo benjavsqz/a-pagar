@@ -11,6 +11,8 @@ export interface Session {
   host_bank: string | null
   host_account: string | null
   host_rut: string | null
+  host_email: string | null // correo del host (la transferencia avisa al correo)
+  host_payment_link: string | null // link opcional de pago (MP, MACH, Fintoc…)
   created_at: string
   split_mode: SplitMode
   split_total: number | null  // equal-split: total amount

@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
+-- El cliente solo puede SUSCRIBIRSE (insert) y darse de baja (delete su endpoint).
+-- La LECTURA queda cerrada: /api/push/send lee con la service-role key (salta RLS),
+-- así no exponemos endpoint + claves (p256dh, auth) a cualquiera con la anon key.
 CREATE POLICY "Anyone can insert subscriptions"
   ON push_subscriptions FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Anyone can read subscriptions"
-  ON push_subscriptions FOR SELECT USING (true);
 
 CREATE POLICY "Anyone can delete subscriptions"
   ON push_subscriptions FOR DELETE USING (true);
