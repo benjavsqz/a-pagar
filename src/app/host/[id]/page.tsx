@@ -5,6 +5,7 @@ import { usePush } from '@/hooks/use-push'
 import { ComprobanteLink } from '@/components/session/comprobante-link'
 import { ItemsClaimList } from '@/components/session/items-claim-list'
 import { computeParticipantSummary, formatCLP, generateSessionLink, copyToClipboard } from '@/lib/utils'
+import { computeHostCollection } from '@/lib/billing'
 import { saveLocalSession } from '@/lib/local-sessions'
 import { toast, Toaster } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
@@ -176,18 +177,16 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     ? payments.filter(p => p.confirmed_by_host).length
     : summaries.filter(s => s.payment?.confirmed_by_host).length
 
-  const confirmedAmount = isEqual
-    ? payments.filter(p => p.confirmed_by_host).reduce((sum, p) => sum + p.amount, 0)
-    : summaries.filter(s => s.payment?.confirmed_by_host).reduce((sum, s) => sum + s.total, 0)
-
-  // Lo que el host espera cobrar = lo que los DEMÁS deben.
-  // - Partes iguales: (n-1) cuotas (el host no se cobra a sí mismo)
-  // - Por ítems: la suma de lo que marcaron los participantes (lo que el host
-  //   consumió queda sin reclamar y no se cobra → así el progreso sí llega a 100%)
-  const claimedTotal = summaries.reduce((sum, s) => sum + s.total, 0)
-  const targetToCollect = isEqual
-    ? sharePerPerson * Math.max(0, (session.split_n ?? 1) - 1)
-    : claimedTotal
+  // Dinero del host: fuente única en src/lib/billing.ts, consistente con lo que
+  // cada invitado realmente ve y paga (evita la divergencia de redondeo que había
+  // entre esta vista y /cuenta). El consumo del host se excluye del cobro.
+  const { target: targetToCollect, confirmed: confirmedAmount } = computeHostCollection({
+    splitMode: session.split_mode,
+    splitTotal: session.split_total,
+    splitN: session.split_n,
+    propinaPct: session.propina_pct,
+    items, claims, participants, payments,
+  })
 
   const progressPct = targetToCollect > 0
     ? Math.min(100, Math.round((confirmedAmount / targetToCollect) * 100))

@@ -4,13 +4,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatCLP } from '@/lib/utils'
+import { computeHostCollection } from '@/lib/billing'
 import { getLocalSessions, type LocalSessionEntry } from '@/lib/local-sessions'
 import { Button } from '@/components/ui/button'
 import {
   ChevronLeft, Plus, Loader2, Utensils, CheckCircle2,
   Clock, Users, ArrowUpRight, TrendingUp, Share2,
 } from 'lucide-react'
-import type { Session } from '@/types'
+import type { Session, Item, Participant, Payment, Claim } from '@/types'
 
 // ── Enriched session data ────────────────────────────────────────────────────
 
@@ -42,91 +43,64 @@ export default function CuentaPage() {
 
       const [sessionsRes, itemsRes, participantsRes, paymentsRes, claimsRes] = await Promise.all([
         supabase.from('sessions').select('*').in('id', ids),
-        supabase.from('items').select('session_id, id, price').in('session_id', ids),
+        supabase.from('items').select('*').in('session_id', ids),
         supabase.from('participants').select('*').in('session_id', ids),
-        supabase.from('payments').select('session_id, participant_id, amount, confirmed_by_host').in('session_id', ids),
-        supabase.from('claims').select('session_id, item_id, participant_id').in('session_id', ids),
+        supabase.from('payments').select('*').in('session_id', ids),
+        supabase.from('claims').select('*').in('session_id', ids),
       ])
 
       const sessMap = Object.fromEntries(
         (sessionsRes.data ?? []).map(s => [s.id, s as Session])
       )
 
-      // El consumo del host (participante is_host) NO se cobra: sus claims
-      // cuentan para dividir ÷N pero no suman al monto por cobrar.
-      const hostIds = new Set(
-        (participantsRes.data ?? []).filter(p => p.is_host).map(p => p.id)
-      )
-
-      // Claims por ítem: total (para el ÷N) y cuántos son de invitados (sí se cobran)
-      const itemClaimCount: Record<string, { total: number; guests: number }> = {}
-      for (const c of claimsRes.data ?? []) {
-        const e = (itemClaimCount[c.item_id] ??= { total: 0, guests: 0 })
-        e.total++
-        if (!hostIds.has(c.participant_id)) e.guests++
+      // Agrupa cada colección por sesión para alimentar el cálculo común.
+      const groupBy = <T extends { session_id: string }>(rows: T[]): Record<string, T[]> => {
+        const map: Record<string, T[]> = {}
+        for (const r of rows) (map[r.session_id] ??= []).push(r)
+        return map
       }
-
-      const itemTotals: Record<string, number> = {}
-      const claimedTotals: Record<string, number> = {}
-      for (const item of itemsRes.data ?? []) {
-        itemTotals[item.session_id] = (itemTotals[item.session_id] ?? 0) + item.price
-        const cc = itemClaimCount[item.id]
-        if (cc && cc.guests > 0) {
-          // Lo que deben los invitados por este ítem = precio/total × (claims de invitados)
-          claimedTotals[item.session_id] =
-            (claimedTotals[item.session_id] ?? 0) + (item.price / cc.total) * cc.guests
-        }
-      }
-
-      const participantCounts: Record<string, number> = {}
-      for (const p of participantsRes.data ?? []) {
-        if (p.is_host) continue // el host no se cuenta como alguien que paga
-        participantCounts[p.session_id] = (participantCounts[p.session_id] ?? 0) + 1
-      }
-
-      const confirmedAmounts: Record<string, number> = {}
-      const confirmedCounts: Record<string, number> = {}
-      for (const pay of paymentsRes.data ?? []) {
-        if (pay.confirmed_by_host) {
-          confirmedAmounts[pay.session_id] = (confirmedAmounts[pay.session_id] ?? 0) + pay.amount
-          confirmedCounts[pay.session_id] = (confirmedCounts[pay.session_id] ?? 0) + 1
-        }
-      }
+      const itemsBy = groupBy((itemsRes.data ?? []) as Item[])
+      const participantsBy = groupBy((participantsRes.data ?? []) as Participant[])
+      const paymentsBy = groupBy((paymentsRes.data ?? []) as Payment[])
+      const claimsBy = groupBy((claimsRes.data ?? []) as (Claim & { session_id: string })[])
 
       const built: SessionCard[] = locals.map(local => {
         const session = sessMap[local.id] ?? null
-        let myPayment: { amount: number; confirmed: boolean } | null = null
+        const items = itemsBy[local.id] ?? []
+        const participants = participantsBy[local.id] ?? []
+        const payments = paymentsBy[local.id] ?? []
+        const claims = claimsBy[local.id] ?? []
 
+        let myPayment: { amount: number; confirmed: boolean } | null = null
         if (local.role === 'participant' && local.participantId) {
-          const pay = (paymentsRes.data ?? []).find(
-            p => p.session_id === local.id && p.participant_id === local.participantId
-          )
+          const pay = payments.find(p => p.participant_id === local.participantId)
           if (pay) myPayment = { amount: pay.amount, confirmed: pay.confirmed_by_host }
         }
 
-        // For equal-split, total comes from session.split_total
         const itemsTotal = session?.split_mode === 'equal'
           ? (session.split_total ?? 0)
-          : (itemTotals[local.id] ?? 0)
+          : items.reduce((sum, i) => sum + i.price, 0)
 
-        // Lo que el host espera cobrar = lo que deben los demás:
-        // - equal: (n-1) cuotas; - ítems: lo reclamado + propina (no su consumo)
-        let target = 0
-        if (session?.split_mode === 'equal' && session.split_total && session.split_n) {
-          target = Math.ceil(session.split_total / session.split_n) * Math.max(0, session.split_n - 1)
-        } else if (session) {
-          const claimed = claimedTotals[local.id] ?? 0
-          target = Math.ceil(claimed * (1 + session.propina_pct / 100))
-        }
+        // Dinero por cobrar: misma fuente que /host y /s (src/lib/billing.ts),
+        // así el total del historial nunca diverge del que ve el host.
+        const { target, confirmed: confirmedAmount, guestCount } = session
+          ? computeHostCollection({
+              splitMode: session.split_mode,
+              splitTotal: session.split_total,
+              splitN: session.split_n,
+              propinaPct: session.propina_pct,
+              items, claims, participants, payments,
+            })
+          : { target: 0, confirmed: 0, guestCount: 0 }
 
         return {
           local,
           session,
           itemsTotal,
           target,
-          participantCount: participantCounts[local.id] ?? 0,
-          confirmedAmount: confirmedAmounts[local.id] ?? 0,
-          confirmedCount: confirmedCounts[local.id] ?? 0,
+          participantCount: guestCount,
+          confirmedAmount,
+          confirmedCount: payments.filter(p => p.confirmed_by_host).length,
           myPayment,
         }
       })
