@@ -202,7 +202,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     : summaries.filter(s => !s.payment).length
 
   return (
-    <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-5">
+    <div className="min-h-dvh flex flex-col max-w-md lg:max-w-5xl mx-auto px-4 lg:px-6 py-6 gap-5">
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
@@ -245,6 +245,10 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           {isEqual && ` · partes iguales`}
         </p>
       </div>
+
+      {/* Cuerpo — 2 columnas en desktop */}
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[1fr_1.05fr] lg:gap-6 lg:items-start">
+      <div className="flex flex-col gap-5">
 
       {/* Equal split info banner */}
       {isEqual && sharePerPerson > 0 && (
@@ -347,6 +351,9 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
         </Card>
       )}
 
+      </div>{/* fin col A */}
+      <div className="flex flex-col gap-5">
+
       {/* Participants */}
       {guests.length === 0 ? (
         <Card className="p-7 text-center flex flex-col items-center gap-3">
@@ -403,7 +410,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Bill summary */}
       {!isEqual && (
-        <Card className="p-4">
+        <Card variant="tonal" className="p-4">
           <div className="flex justify-between items-center">
             <span className="text-sm text-[#6b5f55]">Subtotal boleta</span>
             <span className="font-medium">{formatCLP(billSubtotal)}</span>
@@ -438,6 +445,9 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           Cerrar boleta
         </Button>
       )}
+
+      </div>{/* fin col B */}
+      </div>{/* fin grid */}
 
       <ConfirmDialog
         open={showCloseConfirm}

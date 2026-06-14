@@ -84,13 +84,12 @@ export function ItemsClaimList({
                   : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>{name}</p>
+                  <p className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[11px] font-semibold bg-[#ece2d5] text-[#6b5f55] px-1.5 py-0.5 rounded-full shrink-0">×{units.length}</span>
+                    <span className={`text-xs font-bold truncate ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>{formatCLP(unitPrice)} c/u</span>
+                  </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="text-right">
-                    <span className="text-xs font-semibold bg-[#ece2d5] text-[#6b5f55] px-2 py-0.5 rounded-full">×{units.length}</span>
-                    <p className={`text-sm font-bold mt-0.5 ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>{formatCLP(unitPrice)} c/u</p>
-                  </div>
-                  <div className="flex items-center bg-[#f6f1ea] border border-[#ece2d5] rounded-lg">
+                <div className="flex items-center bg-[#f6f1ea] border border-[#ece2d5] rounded-lg shrink-0">
                     <button
                       onClick={handleRemoveOne}
                       disabled={myCount === 0}
@@ -109,7 +108,6 @@ export function ItemsClaimList({
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2.5 ml-8">
                 {units.map((unit, idx) => {

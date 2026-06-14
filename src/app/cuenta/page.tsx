@@ -126,7 +126,7 @@ export default function CuentaPage() {
   const isEmpty = cards.length === 0
 
   return (
-    <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 pb-24">
+    <div className="min-h-dvh flex flex-col max-w-md lg:max-w-2xl mx-auto px-4 py-6 pb-24">
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
