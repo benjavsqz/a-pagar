@@ -68,6 +68,38 @@ test('flujo por ítems: crear → unirse → marcar → pagar → confirmar → 
   await hostCtx.close()
 })
 
+// ── Flujo 3: el host marca su propio consumo (is_host) ──────────────────────────
+
+test('host marca lo que consumió: sección "Lo que consumí yo" funciona', async ({ browser }) => {
+  const hostCtx = await browser.newContext()
+  const host = await hostCtx.newPage()
+
+  // Crear boleta por ítems
+  await host.goto('/crear')
+  await host.getByRole('button', { name: /Por ítems/ }).click()
+  await host.getByRole('button', { name: /Ingresar ítems a mano/ }).click()
+  await host.getByPlaceholder('Nombre del ítem').first().fill('Pizza')
+  await host.getByPlaceholder('0').first().fill('12000')
+  await host.getByRole('button', { name: /^Continuar/ }).click()
+  await host.getByLabel(/Tu nombre/).fill('Host Consumo E2E')
+  await host.getByRole('button', { name: /Generar link para compartir/ }).click()
+  await host.waitForURL(/\/host\/[0-9a-f-]{36}/, { timeout: 20_000 })
+
+  // La sección del host aparece (requiere que register_host_participant haya creado
+  // el participante is_host → valida que la migración 008 está aplicada).
+  const seccion = host.getByRole('button', { name: /Lo que consumí yo/ })
+  await expect(seccion).toBeVisible({ timeout: 15_000 })
+  await seccion.click()
+
+  // El host marca la Pizza como suya
+  await host.getByRole('button', { name: /Pizza/ }).first().click()
+
+  // El subtítulo refleja su consumo y que NO se le cobra
+  await expect(host.getByText(/no se te cobra/i)).toBeVisible({ timeout: 15_000 })
+
+  await hostCtx.close()
+})
+
 // ── Flujo 2: partes iguales ─────────────────────────────────────────────────────
 
 test('flujo partes iguales: crear → unirse → ver monto a pagar', async ({ browser }) => {
