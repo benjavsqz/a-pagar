@@ -137,24 +137,45 @@ export function ItemsClaimList({
               <div className="flex flex-wrap gap-1.5 mt-2.5 ml-8">
                 {units.map((unit, idx) => {
                   const unitClaims = claims.filter(c => c.item_id === unit.id)
+                  const unitClaimers = unitClaims
+                    .map(c => participants.find(p => p.id === c.participant_id))
+                    .filter((p): p is Participant => !!p)
                   const isMyUnit = myClaimedItemIds.has(unit.id)
-                  const isShared = unitClaims.length > 1
-                  const others = unitClaims.map(c => c.participant_id).filter(pid => pid !== meId).map(firstName)
-                  const chipLabel = isMyUnit
-                    ? 'Tú' + (isShared ? ` +${others.join('+')}` : '')
-                    : unitClaims.length > 0
-                    ? unitClaims.map(c => firstName(c.participant_id)).join('+')
-                    : `Libre ${idx + 1}`
+
+                  // Slot libre — chip punteado
+                  if (unitClaimers.length === 0) {
+                    return (
+                      <span
+                        key={unit.id}
+                        className="text-xs px-2.5 py-1 rounded-full font-medium border border-dashed border-[#e0d4c4] text-[#6b5f55]"
+                      >
+                        Libre {idx + 1}
+                      </span>
+                    )
+                  }
+
+                  // Slot tomado — mismo formato que la leyenda: burbuja inicial + nombre
                   return (
                     <span
                       key={unit.id}
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        isMyUnit ? 'bg-[#0bb673] text-white'
-                        : unitClaims.length > 0 ? 'bg-[#ece2d5] text-[#4a423b]'
-                        : 'border border-dashed border-[#e0d4c4] text-[#6b5f55]'
+                      className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border ${
+                        isMyUnit ? 'bg-[#0bb673]/12 border-[#0bb673]/35' : 'bg-white border-[var(--border)]'
                       }`}
                     >
-                      {chipLabel}
+                      <span className="flex -space-x-1.5">
+                        {unitClaimers.map(p => (
+                          <span
+                            key={p.id}
+                            className="w-4 h-4 rounded-full grid place-items-center text-[8px] font-bold text-white ring-[1.5px] ring-white select-none"
+                            style={{ background: colorForName(p.name) }}
+                          >
+                            {(p.name.trim()[0] ?? '?').toUpperCase()}
+                          </span>
+                        ))}
+                      </span>
+                      <span className={`text-xs font-semibold leading-none ${isMyUnit ? 'text-[#0a6f47]' : 'text-[#4a423b]'}`}>
+                        {unitClaimers.map(p => (p.id === meId ? 'Tú' : p.name.split(' ')[0])).join(' + ')}
+                      </span>
                     </span>
                   )
                 })}

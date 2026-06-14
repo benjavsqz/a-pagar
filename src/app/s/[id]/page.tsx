@@ -24,7 +24,7 @@ type Step = 'who' | 'items' | 'transfer' | 'done'
 
 export default function ParticipantPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { data, loading, error, addClaim, removeClaim, notifyChange } = useSession(id)
+  const { data, loading, error, addClaim, removeClaim, notifyChange, refetch } = useSession(id)
 
   const [step, setStep] = useState<Step>('who')
   const [me, setMe] = useState<Participant | null>(null)
@@ -145,6 +145,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
       const participant = p as Participant
       setMe(participant)
+      void refetch() // recarga para que mi propia lista de participantes me incluya
       notifyChange() // avisa al host/otros que entró alguien nuevo
 
       saveLocalSession({
