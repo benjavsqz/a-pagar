@@ -61,6 +61,7 @@ $$;
 --     valida el host_token (corre como owner → ignora RLS y el WITH CHECK).
 -- ============================================================
 drop policy if exists "participants_insert_open_session" on participants;
+drop policy if exists "participants_insert_guest_only" on participants;
 create policy "participants_insert_guest_only" on participants
   for insert with check (
     is_host = false
