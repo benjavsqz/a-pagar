@@ -32,10 +32,11 @@ export async function generateMetadata({
       title: `${title} — A-Pagar`,
       description: 'Marca lo que pediste, mira tu total con propina y transfiere tu parte. Sin apps, sin cuentas.',
       robots: { index: false, follow: false },
+      // La imagen OG la aporta el archivo co-localizado opengraph-image.tsx
+      // (dinámica por sesión); no fijamos images aquí para no pisarla.
       openGraph: {
         title,
         description: 'Entra, marca lo que pediste y paga tu parte.',
-        images: ['/opengraph-image'],
       },
       twitter: {
         card: 'summary_large_image',

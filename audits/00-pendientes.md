@@ -57,6 +57,8 @@
 - 🔲 [ALTO-3] Ampliar tests (más allá de billing)
 - 🔲 [MEDIO] DraftItem duplicado; fallbacks "si migración no aplicada" en prod
 
-## Pendiente — SEO/Perf (07) — menores
-- 🔲 [MEDIA] OG image dinámica por sesión (hoy genérica)
-- 🔲 [BAJA] preload del LCP; robots para crawlers IA; varios menores
+## SEO/Perf (07) — ✅ tanda 4
+- ✅ [MEDIA] OG image dinámica por sesión (`s/[id]/opengraph-image.tsx`)
+- ✅ [03-Bajo] `<img>` de ocr-uploader: directiva eslint reposicionada (lint 0 warnings)
+- ℹ️ robots crawlers IA: `*` ya bloquea /s /host /api; landing pública a propósito → aceptable
+- 🔲 [BAJA] preload del LCP (marginal, se omite por riesgo/beneficio)
