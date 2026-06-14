@@ -331,7 +331,7 @@ export default function CrearPage() {
 
   if (splitMode === null) {
     return (
-      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
+      <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-8">
           <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]">
             <ChevronLeft className="w-5 h-5" />
@@ -406,7 +406,7 @@ export default function CrearPage() {
 
   if (splitMode === 'items') {
     return (
-      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
+      <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-2">
           <button
             onClick={goBackItems}
@@ -592,7 +592,7 @@ export default function CrearPage() {
   const sharePerPerson = nNum > 0 ? Math.ceil(totalNum / nNum) : 0
 
   return (
-    <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
+    <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-2">
         <button
           onClick={goBackEqual}

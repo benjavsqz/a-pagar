@@ -202,7 +202,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     : summaries.filter(s => !s.payment).length
 
   return (
-    <div className="min-h-dvh flex flex-col max-w-md lg:max-w-5xl mx-auto px-4 lg:px-6 py-6 gap-5">
+    <div className="min-h-dvh flex flex-col w-full max-w-md lg:max-w-5xl mx-auto px-4 lg:px-6 py-6 gap-5">
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 

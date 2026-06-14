@@ -82,7 +82,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         toast(`${label} copiado ✓`)
       }
       return (
-        <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
+        <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6 gap-4">
           <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
           <div className="text-center mt-6">
             <div className="w-12 h-12 rounded-2xl bg-[#ece2d5] flex items-center justify-center mx-auto mb-3">
@@ -161,7 +161,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
       : 0
 
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6">
+      <div className="min-h-dvh flex flex-col items-center justify-center w-full max-w-sm mx-auto px-5 gap-6">
         <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
         <div className="text-center">
@@ -236,7 +236,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
   // ── PASO 2: Marcar ítems ───────────────────────────────────────────────────
   if (step === 'items' && !isEqual) {
     return (
-      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
+      <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
@@ -409,7 +409,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
+      <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-6 h-6 rounded-md bg-[#0bb673] flex items-center justify-center">
@@ -530,7 +530,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
   // ── PASO 4: Listo ──────────────────────────────────────────────────────────
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6 text-center overflow-hidden">
+    <div className="min-h-dvh flex flex-col items-center justify-center w-full max-w-sm mx-auto px-5 gap-6 text-center overflow-hidden">
 
       {/* Success glow */}
       <div className="pointer-events-none fixed inset-0 bg-[#ffd9c7]/40 blur-[120px] -z-10" />
