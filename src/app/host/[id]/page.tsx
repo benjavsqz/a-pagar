@@ -2,7 +2,7 @@
 import { use, useEffect, useRef, useState } from 'react'
 import { useSession } from '@/hooks/use-session'
 import { usePresence } from '@/hooks/use-presence'
-import { PresenceBubbles } from '@/components/session/presence-bubbles'
+import { ParticipantsLegend } from '@/components/session/presence-bubbles'
 import { LogoMark } from '@/components/brand/logo-mark'
 import { usePush } from '@/hooks/use-push'
 import { ComprobanteLink } from '@/components/session/comprobante-link'
@@ -246,9 +246,9 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
           {isEqual && ` · partes iguales`}
         </p>
-        {presence.length > 0 && (
+        {participants.length > 0 && (
           <div className="mt-3">
-            <PresenceBubbles people={presence} />
+            <ParticipantsLegend participants={participants} meId={hostParticipant?.id} presentNames={presence.map(p => p.name)} />
           </div>
         )}
       </div>

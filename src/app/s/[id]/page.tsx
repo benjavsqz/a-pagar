@@ -3,7 +3,7 @@ import { use, useState, useRef } from 'react'
 import { useSession } from '@/hooks/use-session'
 import { usePresence } from '@/hooks/use-presence'
 import { usePush } from '@/hooks/use-push'
-import { PresenceBubbles } from '@/components/session/presence-bubbles'
+import { ParticipantsLegend } from '@/components/session/presence-bubbles'
 import { LogoMark } from '@/components/brand/logo-mark'
 import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/utils'
 import { saveLocalSession, getLocalSession } from '@/lib/local-sessions'
@@ -252,9 +252,9 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           <p className="text-sm text-[#6b5f55] mt-1">
             Marca lo que pediste, {me.name}. ¿Compartiste un plato? Toca <span className="font-medium text-[#0a6f47]">Dividir</span> y que el otro también lo tome.
           </p>
-          {presence.length > 0 && (
+          {participants.length > 0 && (
             <div className="mt-3">
-              <PresenceBubbles people={presence} />
+              <ParticipantsLegend participants={participants} meId={me.id} presentNames={presence.map(p => p.name)} />
             </div>
           )}
         </div>
