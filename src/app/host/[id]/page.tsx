@@ -371,6 +371,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
                 return (
                   <EqualParticipantCard
                     key={p.id}
+                    sessionId={id}
                     name={p.name}
                     amount={sharePerPerson}
                     payment={payment}
@@ -384,6 +385,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
             : summaries.map(s => (
                 <ParticipantCard
                   key={s.participant.id}
+                  sessionId={id}
                   summary={s}
                   propinaPct={session.propina_pct}
                   expanded={expandedParticipant === s.participant.id}
@@ -455,8 +457,9 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 // ── Equal split participant card ──────────────────────────────────────────────
 
 function EqualParticipantCard({
-  name, amount, payment, expanded, onToggle, onConfirm, isConfirming,
+  sessionId, name, amount, payment, expanded, onToggle, onConfirm, isConfirming,
 }: {
+  sessionId: string
   name: string
   amount: number
   payment: { confirmed_by_host: boolean; comprobante_url?: string | null } | null
@@ -498,7 +501,7 @@ function EqualParticipantCard({
             <span className="text-[#077f4e]">{formatCLP(amount)}</span>
           </div>
           {payment?.comprobante_url && (
-            <ComprobanteLink value={payment.comprobante_url} />
+            <ComprobanteLink value={payment.comprobante_url} sessionId={sessionId} />
           )}
           {isPaid && !isConfirmed && (
             <Button size="sm" fullWidth onClick={onConfirm} loading={isConfirming} className="mt-2">
@@ -519,8 +522,9 @@ function EqualParticipantCard({
 // ── Items participant card ────────────────────────────────────────────────────
 
 function ParticipantCard({
-  summary, propinaPct, expanded, onToggle, onConfirm, isConfirming,
+  sessionId, summary, propinaPct, expanded, onToggle, onConfirm, isConfirming,
 }: {
+  sessionId: string
   summary: ReturnType<typeof computeParticipantSummary>
   propinaPct: number
   expanded: boolean
@@ -589,7 +593,7 @@ function ParticipantCard({
           </div>
           {payment?.comprobante_url && (
             <div className="mt-2">
-              <ComprobanteLink value={payment.comprobante_url} />
+              <ComprobanteLink value={payment.comprobante_url} sessionId={sessionId} />
             </div>
           )}
           {isPaid && !isConfirmed && (

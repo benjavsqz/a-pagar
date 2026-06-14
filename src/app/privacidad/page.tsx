@@ -37,8 +37,10 @@ export default function PrivacidadPage() {
           <ul className="list-disc pl-5 space-y-1 text-[#6b5f55]">
             <li>El nombre que escribes al crear o unirte a una boleta.</li>
             <li>Los ítems y montos de la boleta.</li>
-            <li>Los datos de transferencia que el anfitrión decide compartir con su grupo (nombre, banco, número de cuenta, RUT).</li>
+            <li>Los datos de transferencia que el anfitrión decide compartir con su grupo (nombre, banco, número de cuenta, RUT, correo y link de pago, si los ingresa).</li>
             <li>Los comprobantes de transferencia que los participantes suben voluntariamente.</li>
+            <li>Si activas las notificaciones, los datos técnicos de tu suscripción push (identificador del navegador/dispositivo) para poder avisarte de pagos.</li>
+            <li>La foto de la boleta que subes para el escaneo; puede contener datos del local (nombre, RUT del comercio) además de los ítems.</li>
           </ul>
         </section>
 
@@ -62,20 +64,35 @@ export default function PrivacidadPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-bold text-[#1a1614]">Servicios de terceros</h2>
+          <h2 className="font-bold text-[#1a1614]">Servicios de terceros y transferencias internacionales</h2>
+          <p className="text-[#6b5f55]">
+            Algunos proveedores procesan datos fuera de Chile (principalmente en EE. UU.):
+          </p>
           <ul className="list-disc pl-5 space-y-1 text-[#6b5f55]">
             <li><strong className="text-[#4a423b]">Supabase</strong> — base de datos y almacenamiento de comprobantes.</li>
-            <li><strong className="text-[#4a423b]">Google Gemini</strong> — la foto de la boleta se envía a Google para extraer los ítems (solo la imagen, sin datos personales adicionales).</li>
-            <li><strong className="text-[#4a423b]">Vercel</strong> — hosting y métricas de uso anónimas (sin cookies de seguimiento).</li>
+            <li><strong className="text-[#4a423b]">Google Gemini</strong> — la foto de la boleta se envía a Google (EE. UU.) para extraer los ítems.</li>
+            <li><strong className="text-[#4a423b]">Vercel</strong> — hosting (EE. UU.) y métricas de uso anónimas (sin cookies de seguimiento).</li>
           </ul>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="font-bold text-[#1a1614]">Cuánto tiempo se conservan</h2>
+          <p>
+            Los datos de transferencia del anfitrión (RUT, cuenta, banco, correo y link de pago)
+            se eliminan automáticamente <strong className="text-[#4a423b]">30 días después</strong> de que
+            la boleta se cierra. Puedes pedir la eliminación antes en cualquier momento.
+          </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-bold text-[#1a1614]">Tus derechos</h2>
           <p>
-            Conforme a la ley chilena de protección de datos personales (Ley 19.628 y sus
-            modificaciones), puedes solicitar la eliminación de una boleta y de los datos
-            asociados escribiendo a{' '}
+            Conforme a la ley chilena de protección de datos personales (Ley 19.628 y la
+            Ley 21.719), tienes derecho a <strong className="text-[#4a423b]">acceder</strong> a tus
+            datos, <strong className="text-[#4a423b]">rectificarlos</strong>,{' '}
+            <strong className="text-[#4a423b]">eliminarlos</strong> y{' '}
+            <strong className="text-[#4a423b]">oponerte</strong> a su tratamiento. Para ejercerlos,
+            escribe a{' '}
             <a href="mailto:benjavsqueza@gmail.com" className="text-[#077f4e] hover:underline">
               benjavsqueza@gmail.com
             </a>{' '}

@@ -20,7 +20,8 @@
 - ✅ [01-BAJO] Headers de seguridad (CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy)
 - ✅ [01-BAJO] `host_payment_link` con allowlist de dominios (`normalizePaymentLink`)
 - ✅ [02-SEV3] `confirm_payment` verifica que el participant pertenezca a la session (mig 009)
-- 🔲 [01-MEDIO] Signed URLs de comprobantes con anon client → mover a API route con token
+- ✅ [01-MEDIO] Signed URLs de comprobantes ahora server-side (`/api/comprobante` valida host_token)
+- ✅ [01-MEDIO] Retención: PII del host se anonimiza 30 días tras cerrar (mig 010 + cron) + política actualizada
 - 🔲 [01-BAJO] `claims_delete_any` abierto → sin auth no se puede atar al caller; requiere decisión
 - 🔲 [02-SEV2] `claims.session_id` NULLABLE → NOT NULL + FK (mig; riesgo si hay nulos)
 - 🔲 [02-SEV2] `push_subscriptions` session_id/participant_id NULLABLE

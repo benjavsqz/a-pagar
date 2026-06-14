@@ -1,15 +1,16 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getLocalSession } from '@/lib/local-sessions'
 import { toast } from '@/components/ui/toast'
 import { ExternalLink, Loader2 } from 'lucide-react'
 
 /**
  * Abre el comprobante de transferencia.
- * - Valores nuevos: path dentro del bucket privado → genera signed URL (1 h).
+ * - Valores nuevos: path en el bucket privado → la signed URL la genera el
+ *   servidor tras validar el host_token (no el cliente con la anon key).
  * - Valores legacy: URL pública completa guardada antes de la migración 005.
  */
-export function ComprobanteLink({ value }: { value: string }) {
+export function ComprobanteLink({ value, sessionId }: { value: string; sessionId: string }) {
   const [loading, setLoading] = useState(false)
 
   const handleOpen = async () => {
@@ -19,12 +20,15 @@ export function ComprobanteLink({ value }: { value: string }) {
     }
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.storage
-        .from('comprobantes')
-        .createSignedUrl(value, 60 * 60)
-      if (error || !data?.signedUrl) throw error ?? new Error('Sin URL')
-      window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+      const token = getLocalSession(sessionId)?.hostToken ?? null
+      const res = await fetch('/api/comprobante', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, path: value, token }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Sin URL')
+      window.open(data.url, '_blank', 'noopener,noreferrer')
     } catch (err) {
       console.error('Error generando signed URL:', err)
       toast('No se pudo abrir el comprobante', 'error')
