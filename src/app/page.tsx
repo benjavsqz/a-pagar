@@ -34,10 +34,6 @@ export default function Home() {
         <div className="grid lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:items-center lg:py-10">
           {/* Texto + CTA */}
           <div className="flex flex-col py-4 lg:py-0" style={{ animation: 'fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both' }}>
-            <span className="self-start inline-flex items-center gap-2 bg-[var(--coral-soft)] text-[var(--coral-ink)] text-xs font-bold px-3 py-1.5 rounded-full mb-5">
-              <span className="w-[7px] h-[7px] rounded-full bg-[var(--coral)]" />
-              Sin apps · Sin cuentas · Solo el link
-            </span>
             <h1 className="font-display font-semibold text-[clamp(2.9rem,11vw,4.6rem)] leading-[0.98] tracking-[-0.03em]">
               Divide la cuenta <em className="italic text-[#0a6f47]">sin drama</em>.
             </h1>
