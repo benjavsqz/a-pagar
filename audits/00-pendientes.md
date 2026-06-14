@@ -51,12 +51,17 @@
 - ✅ [SEV-3] Estado vacío host con CTA Compartir/Copiar
 - ✅ [03-Bajo] Toaster montado una sola vez (en layout)
 
-## Pendiente — Arquitectura/Testing (06)
-- ♻️ [CRÍTICO-2] `crear/page.tsx` (843 líneas) — componente-Dios → extraer pasos
-- ♻️ [ALTO-1] Sin data-layer: `createClient()` directo en componentes
-- ♻️ [ALTO-2] `useSession` con 4 responsabilidades
-- 🔲 [ALTO-3] Ampliar tests (más allá de billing)
-- 🔲 [MEDIO] DraftItem duplicado; fallbacks "si migración no aplicada" en prod
+## Arquitectura/Testing (06) — parcial tanda 6
+- ✅ [ALTO-3] Tests ampliados: utils (RUT, payment-link allowlist, summaries) — 21 tests
+- 🟗 [CRÍTICO-2] `crear/page.tsx`: 843 → 721 líneas (extraídos HostDataForm + StepIndicator).
+  La descomposición total de los dos flujos en step-components queda pendiente: es
+  prop-threading masivo y sin tests de integración el riesgo de regresión supera el
+  beneficio para el MVP → hacerlo como tanda dedicada con verificación en app corriendo.
+- 🔲 [ALTO-1] Data-layer (repository sobre createClient): mejora de mantenibilidad,
+  difiere — toca muchos call sites; mejor con la app verificable.
+- 🔲 [ALTO-2] `useSession` 4 responsabilidades: cohesivo hoy; partir arriesga el realtime.
+- ℹ️ [MEDIO] fallbacks "si migración no aplicada": se pueden quitar una vez aplicadas
+  005–010 en producción (ver pasos al usuario).
 
 ## SEO/Perf (07) — ✅ tanda 4
 - ✅ [MEDIA] OG image dinámica por sesión (`s/[id]/opengraph-image.tsx`)
