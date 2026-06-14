@@ -171,7 +171,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             </div>
             <span className="text-xl font-black tracking-tight">A-Pagar</span>
           </div>
-          <h1 className="text-xl font-bold">
+          <h1 className="font-display text-[1.7rem] font-semibold leading-tight">
             {session.restaurant_name ?? 'Dividiendo la cuenta'}
           </h1>
           <p className="text-sm text-[#6b5f55] mt-1">
@@ -245,14 +245,14 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             </div>
             <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
           </div>
-          <h1 className="text-lg font-bold">{session.restaurant_name ?? 'La cuenta'}</h1>
-          <p className="text-sm text-[#6b5f55]">
-            Marca lo que pediste, {me.name}. ¿Compartiste un plato? Toca <span className="font-medium text-[#077f4e]">Dividir</span> y que el otro también lo tome.
+          <h1 className="font-display text-2xl font-semibold">{session.restaurant_name ?? 'La cuenta'}</h1>
+          <p className="text-sm text-[#6b5f55] mt-1">
+            Marca lo que pediste, {me.name}. ¿Compartiste un plato? Toca <span className="font-medium text-[#0a6f47]">Dividir</span> y que el otro también lo tome.
           </p>
         </div>
 
         {/* Items list */}
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col">
           <ItemsClaimList
             items={items}
             claims={claims}
@@ -262,14 +262,21 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             addClaim={addClaim}
             removeClaim={removeClaim}
           />
+          {/* Guía que llena el espacio cuando aún no marcas nada */}
+          {summary.items.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-2.5 py-10 text-[#9a8b7c]">
+              <CheckCircle2 className="w-9 h-9 opacity-50" strokeWidth={1.6} />
+              <p className="text-sm max-w-[24ch] leading-snug">Toca los platos que pediste para sumar tu parte.</p>
+            </div>
+          )}
         </div>
 
         {/* Sticky total */}
-        <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-[#fbf3ea] from-70% to-transparent">
-          <Card className="p-4 space-y-3">
+        <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-[#faf2e7] from-70% to-transparent">
+          <Card variant="elevated" className="p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-[#6b5f55]">Tu total a pagar</p>
+                <p className="meta">Tu total a pagar</p>
                 <p className="money text-2xl font-black text-[#077f4e]">{formatCLP(summary.total)}</p>
                 {session.propina_pct > 0 && summary.items.length > 0 && (
                   <p className="text-xs text-[#6b5f55]">

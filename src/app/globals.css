@@ -4,27 +4,29 @@
   /* ── Tema claro cálido — "app de amigos" ────────────────────────
      Fondo crema, tarjetas blancas, sombras tibias. Verde para la
      plata, coral como acento social. */
-  --bg:        #fbf3ea;
-  --bg-2:      #f6ede1;
+  --bg:        #faf2e7;
+  --bg-2:      #f4ead9;
   --surface:   #ffffff;
-  --surface-2: #f6f1ea;
-  --surface-3: #efe6da;
-  --border:    #ece2d5;
-  --border-2:  #e0d4c4;
+  --surface-2: #f4ead9; /* superficie tonal plana — info pasiva */
+  --surface-3: #ece0cd;
+  --border:    #e7d9c5;
+  --border-2:  #ddccb4;
 
   /* Brand — verde. #0bb673 sirve para FONDOS/relleno; para TEXTO sobre claro
      usar --brand-ink (más oscuro) que sí pasa contraste AA. */
   --brand:      #0bb673;
   --brand-2:    #16d488;
-  --brand-ink:  #077f4e; /* verde para texto sobre fondos claros */
+  --brand-ink:  #0a6f47; /* verde para texto sobre fondos claros (AA) */
   --brand-dim:  #0a9c63;
+  --brand-deep: #073d27; /* verde profundo — gradientes de "tu parte" */
   --brand-fg:   #ffffff;
   --brand-soft: rgba(11, 182, 115, 0.10);
 
-  /* Accent — coral social (botones secundarios, detalles) */
-  --coral:      #ff7a59;
+  /* Accent — coral social (eyebrow, foto, detalles) */
+  --coral:      #ff6a45;
   --coral-2:    #f2542d;
-  --coral-soft: rgba(255, 122, 89, 0.12);
+  --coral-ink:  #c43c1c; /* coral para texto sobre claro (AA) */
+  --coral-soft: #ffe7df;
 
   /* Secondary — violeta (modo "partes iguales") */
   --violet:      #7c6cf0;
@@ -64,8 +66,8 @@
   --color-muted:      var(--border-2);
 
   --font-sans:    var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: var(--font-jakarta), sans-serif;
-  --font-mono:    var(--font-geist-mono), ui-monospace, 'SF Mono', monospace;
+  --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+  --font-mono:    var(--font-space-mono), ui-monospace, 'SF Mono', monospace;
 
   /* Animaciones reutilizables como utilidades Tailwind */
   --animate-fade-up:   fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -84,18 +86,65 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative;
+}
+
+/* Grano de papel — textura cálida sutil sobre todo el fondo */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
 }
 
 * { -webkit-tap-highlight-color: transparent; }
+
+/* Ocultar flechitas nativas del input de precio (number) */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
 
 /* Números tabulares para que los montos no "salten" al cambiar */
 .tabular { font-variant-numeric: tabular-nums; }
 .money {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
 }
-.font-display { font-family: var(--font-display); }
+.font-display { font-family: var(--font-display); font-optical-sizing: auto; }
+/* Etiquetas "meta" estilo ticket — mono, mayúsculas, espaciadas */
+.meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Divisor perforado (línea de corte de boleta) */
+.perf { border: 0; border-top: 2px dashed var(--border); }
+
+/* Superficie tonal plana — para info pasiva (jerarquía vs cards blancas) */
+.surface-tonal {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+/* Borde dentado inferior — tarjeta tipo recibo */
+.receipt-edge { position: relative; }
+.receipt-edge::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -8px;
+  height: 16px;
+  background: radial-gradient(circle at 8px 0, transparent 8px, var(--surface) 8.5px) repeat-x;
+  background-size: 22px 16px;
+  background-position: 0 -8px;
+}
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }

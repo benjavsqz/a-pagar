@@ -1,22 +1,32 @@
 import type { Metadata, Viewport } from 'next'
-import { Plus_Jakarta_Sans, Geist_Mono } from 'next/font/google'
+import { Plus_Jakarta_Sans, Fraunces, Space_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/toast'
 import { PwaInstallBanner } from '@/components/pwa-install-banner'
 import { StructuredData } from '@/components/structured-data'
 import './globals.css'
 
-// Cuerpo + titulares — redondeada, cálida, "app de amigos"
+// Cuerpo — sans limpia y cálida ("app de amigos")
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-jakarta',
   display: 'swap',
 })
 
-// Montos en plata — mono con tabular figures, estilo boleta
-const geistMono = Geist_Mono({
+// Titulares — serif suave editorial con itálica ("recibo cálido")
+const fraunces = Fraunces({
   subsets: ['latin'],
-  variable: '--font-geist-mono',
+  variable: '--font-fraunces',
+  display: 'swap',
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
+})
+
+// Montos en plata — mono tipo ticket, tabular figures
+const spaceMono = Space_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-space-mono',
   display: 'swap',
 })
 
@@ -58,7 +68,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-CL" className={`h-full ${jakarta.variable} ${geistMono.variable}`}>
+    <html lang="es-CL" className={`h-full ${jakarta.variable} ${fraunces.variable} ${spaceMono.variable}`}>
       <body className="min-h-full flex flex-col bg-[#fbf3ea] text-[#1a1614] antialiased font-sans">
         <StructuredData />
         {children}
