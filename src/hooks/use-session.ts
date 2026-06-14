@@ -59,7 +59,22 @@ export function useSession(sessionId: string) {
     channel.on('broadcast', { event: 'sync' }, () => load()).subscribe()
     channelRef.current = channel
 
-    return () => { channelRef.current = null; supabase.removeChannel(channel) }
+    // Red de seguridad: el broadcast es "fire-and-forget" y se pierde si el
+    // websocket se suspende (pestaña en segundo plano / pantalla apagada en
+    // móvil) o la red falla. Garantizamos consistencia eventual refrescando al
+    // volver a la pestaña y con un poll suave mientras está visible.
+    const refresh = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('focus', refresh)
+    const poll = setInterval(refresh, 4000)
+
+    return () => {
+      channelRef.current = null
+      supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('focus', refresh)
+      clearInterval(poll)
+    }
   }, [sessionId, load])
 
   // Avisa a los demás clientes que hubo un cambio en la boleta.
