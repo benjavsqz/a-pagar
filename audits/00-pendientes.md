@@ -38,15 +38,16 @@
 - 🔲 [Bajo] `generateSessionLink` usa `window.location.origin` (falla SSR)
 - 🔲 [Bajo] Toaster montado dos veces; usePush sin cleanup; keys por índice; cast types
 
-## Pendiente — UX/a11y (04)
-- 🔲 [SEV-1] `window.confirm()` para cerrar boleta → modal accesible
-- 🔲 [SEV-2] Campos obligatorio/opcional sin indicar en form de host
-- 🔲 [SEV-2] `inputMode="numeric"` real en Nro de cuenta (quick win)
-- 🔲 [SEV-2] Botón "Ya transferí (sin comprobante)" con demasiado peso
-- 🔲 [SEV-2] Propina sin estado "ninguna seleccionada"
-- 🔲 [SEV-3] Stepper +/- de 28px (< 44px touch target)
-- 🔲 [SEV-3] Chips no-interactivos se ven iguales a los interactivos
-- 🔲 [SEV-3] Estado vacío host sin CTA de compartir
+## UX/a11y (04) — ✅ tanda 2
+- ✅ [SEV-1] `window.confirm()` → `ConfirmDialog` accesible (alertdialog, Escape, foco)
+- ✅ [SEV-2] Form host: hint "* obligatorios", sección "Para que te transfieran", Correo (opcional)
+- ✅ [SEV-2] `inputMode="numeric"` ya presente en Nro de cuenta (verificado)
+- ✅ [SEV-2] "Ya transferí, sin comprobante" pasa a enlace de texto (menor jerarquía)
+- ✅ [SEV-2] Propina: subtítulo dinámico según estado (el toggle ya marca selección)
+- ✅ [SEV-3] Stepper +/- a 40px
+- ✅ [SEV-3] Chips de otros claimers son `<span>`, solo el propio es botón
+- ✅ [SEV-3] Estado vacío host con CTA Compartir/Copiar
+- ✅ [03-Bajo] Toaster montado una sola vez (en layout)
 
 ## Pendiente — Arquitectura/Testing (06)
 - ♻️ [CRÍTICO-2] `crear/page.tsx` (843 líneas) — componente-Dios → extraer pasos

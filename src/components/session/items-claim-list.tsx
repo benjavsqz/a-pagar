@@ -91,18 +91,18 @@ export function ItemsClaimList({
                       onClick={handleRemoveOne}
                       disabled={myCount === 0}
                       aria-label="Quitar uno"
-                      className="w-7 h-7 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-20 transition-colors"
+                      className="w-10 h-10 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-20 transition-colors"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-4 h-4" />
                     </button>
                     <span className={`w-5 text-center text-xs font-bold tabular-nums select-none ${myCount > 0 ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>{myCount}</span>
                     <button
                       onClick={handleAdd}
                       disabled={freeCount === 0 || !open}
                       aria-label="Agregar uno"
-                      className="w-7 h-7 flex items-center justify-center text-[#6b5f55] hover:text-[#077f4e] disabled:opacity-20 transition-colors"
+                      className="w-10 h-10 flex items-center justify-center text-[#6b5f55] hover:text-[#077f4e] disabled:opacity-20 transition-colors"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -201,17 +201,26 @@ export function ItemsClaimList({
                 <div className="flex flex-wrap items-center gap-1.5 ml-8">
                   {claimers.map(p => {
                     const mine = p.id === meId
-                    return (
+                    const share = formatCLP(Math.ceil(item.price / itemClaims.length))
+                    // El chip propio es accionable (toca para soltar tu parte); los de
+                    // los demás son etiquetas de estado → <span>, no botón deshabilitado
+                    // que se ve igual (audits/04-ux-a11y.md, SEV-3).
+                    return mine ? (
                       <button
                         key={p.id}
-                        onClick={() => mine ? removeClaim(item.id, meId) : undefined}
-                        disabled={!mine}
-                        className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
-                          mine ? 'bg-[#0bb673] text-white' : 'bg-[#ece2d5] text-[#4a423b] cursor-default'
-                        }`}
+                        onClick={() => removeClaim(item.id, meId)}
+                        aria-label="Soltar mi parte de este ítem"
+                        className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#0bb673] text-white transition-colors active:scale-95"
                       >
-                        {mine ? 'Tú' : firstName(p.id)} · {formatCLP(Math.ceil(item.price / itemClaims.length))}
+                        Tú · {share}
                       </button>
+                    ) : (
+                      <span
+                        key={p.id}
+                        className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#ece2d5] text-[#4a423b]"
+                      >
+                        {firstName(p.id)} · {share}
+                      </span>
                     )
                   })}
                   {open && !isMine && (

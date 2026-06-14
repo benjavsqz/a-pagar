@@ -6,7 +6,7 @@ import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/uti
 import { saveLocalSession, getLocalSession } from '@/lib/local-sessions'
 import type { Participant } from '@/types'
 import { createClient } from '@/lib/supabase/client'
-import { toast, Toaster } from '@/components/ui/toast'
+import { toast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -83,7 +83,6 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
       }
       return (
         <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
-          <Toaster />
           <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
           <div className="text-center mt-6">
             <div className="w-12 h-12 rounded-2xl bg-[#ece2d5] flex items-center justify-center mx-auto mb-3">
@@ -163,7 +162,6 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6">
-        <Toaster />
         <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
         <div className="text-center">
@@ -239,7 +237,6 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
   if (step === 'items' && !isEqual) {
     return (
       <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
-        <Toaster />
         {/* Header */}
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
@@ -406,7 +403,6 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
     return (
       <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
-        <Toaster />
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-6 h-6 rounded-md bg-[#0bb673] flex items-center justify-center">
@@ -503,9 +499,15 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           <Button fullWidth size="lg" onClick={() => fileRef.current?.click()} loading={uploadingComprobante}>
             <Upload className="w-4 h-4" /> Adjuntar comprobante
           </Button>
-          <Button variant="secondary" fullWidth onClick={handleMarkAsPaid} disabled={uploadingComprobante}>
-            Ya transferí (sin comprobante)
-          </Button>
+          {/* Acción secundaria de menor jerarquía: adjuntar comprobante es lo
+              recomendado, esto es el escape (audits/04-ux-a11y.md, SEV-2). */}
+          <button
+            onClick={handleMarkAsPaid}
+            disabled={uploadingComprobante}
+            className="w-full text-sm text-[#6b5f55] hover:text-[#4a423b] py-2 transition-colors disabled:opacity-40"
+          >
+            Ya transferí, sin comprobante
+          </button>
           {!isEqual && (
             <button
               onClick={() => setStep('items')}
@@ -522,7 +524,6 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
   // ── PASO 4: Listo ──────────────────────────────────────────────────────────
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6 text-center overflow-hidden">
-      <Toaster />
 
       {/* Success glow */}
       <div className="pointer-events-none fixed inset-0 bg-[#ffd9c7]/40 blur-[120px] -z-10" />

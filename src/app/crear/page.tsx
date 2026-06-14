@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { toast, Toaster } from '@/components/ui/toast'
+import { toast } from '@/components/ui/toast'
 import { ItemRow } from '@/components/session/item-row'
 import { OcrUploader } from '@/components/session/ocr-uploader'
 import { formatCLP, formatRut, isValidRut, normalizePaymentLink } from '@/lib/utils'
@@ -370,7 +370,6 @@ export default function CrearPage() {
   if (splitMode === null) {
     return (
       <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
-        <Toaster />
         <div className="flex items-center gap-3 mb-8">
           <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]">
             <ChevronLeft className="w-5 h-5" />
@@ -446,7 +445,6 @@ export default function CrearPage() {
   if (splitMode === 'items') {
     return (
       <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
-        <Toaster />
         <div className="flex items-center gap-3 mb-2">
           <button
             onClick={goBackItems}
@@ -533,7 +531,9 @@ export default function CrearPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold">Propina</p>
-                  <p className="text-xs text-[#6b5f55] mt-0.5">Proporcional al consumo</p>
+                  <p className="text-xs text-[#6b5f55] mt-0.5">
+                    {propina === 0 ? 'No se agregará propina' : 'Proporcional al consumo de cada uno'}
+                  </p>
                 </div>
                 <div className="flex gap-1.5 bg-[#f6f1ea] border border-[#ece2d5] rounded-full p-1">
                   {([0, 10] as const).map(pct => (
@@ -631,7 +631,6 @@ export default function CrearPage() {
 
   return (
     <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
-      <Toaster />
       <div className="flex items-center gap-3 mb-2">
         <button
           onClick={goBackEqual}
@@ -787,6 +786,7 @@ function HostDataForm({
     <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-8">
       <p className="text-sm text-[#6b5f55] leading-relaxed">
         {hint ?? 'Tus datos de transferencia aparecerán para que los demás sepan a dónde pagarte.'}
+        {' '}<span className="text-[#8a7d71]">Los campos con * son obligatorios.</span>
       </p>
 
       <Input
@@ -795,6 +795,8 @@ function HostDataForm({
         value={hostName}
         onChange={e => setHostName(e.target.value)}
       />
+
+      <p className="text-xs font-semibold text-[#6b5f55] uppercase tracking-wider pt-1">Para que te transfieran</p>
 
       <SelectField
         label="Banco"
@@ -829,7 +831,7 @@ function HostDataForm({
       />
 
       <Input
-        label="Correo"
+        label="Correo (opcional)"
         placeholder="tucorreo@ejemplo.cl"
         value={hostEmail}
         onChange={e => setHostEmail(e.target.value)}

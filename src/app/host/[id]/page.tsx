@@ -7,9 +7,10 @@ import { ItemsClaimList } from '@/components/session/items-claim-list'
 import { computeParticipantSummary, formatCLP, generateSessionLink, copyToClipboard } from '@/lib/utils'
 import { computeHostCollection } from '@/lib/billing'
 import { saveLocalSession } from '@/lib/local-sessions'
-import { toast, Toaster } from '@/components/ui/toast'
+import { toast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Share2, CheckCircle2, Clock, AlertCircle, Copy, ExternalLink,
   ChevronDown, ChevronUp, Loader2, ChevronLeft, Users, Utensils, Bell,
@@ -23,6 +24,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   const [copiedLink, setCopiedLink] = useState(false)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [closing, setClosing] = useState(false)
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showMyItems, setShowMyItems] = useState(false)
   const prevPaymentCount = useRef(0)
 
@@ -112,10 +114,10 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const handleCloseSession = async () => {
-    if (!window.confirm('¿Cerrar esta boleta? Nadie más podrá unirse.')) return
     setClosing(true)
     const err = await closeSession()
     setClosing(false)
+    setShowCloseConfirm(false)
     if (err) {
       toast(`Error al cerrar: ${err}`, 'error')
       return
@@ -201,8 +203,6 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-5">
-      <Toaster />
-
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
@@ -349,9 +349,17 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Participants */}
       {guests.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-[#6b5f55] text-sm">Esperando que alguien abra el link...</p>
-          <p className="text-xs text-[#6b5f55] mt-1">Esta pantalla se actualiza automáticamente</p>
+        <Card className="p-7 text-center flex flex-col items-center gap-3">
+          <p className="text-[#6b5f55] text-sm">Aún no se une nadie. Comparte el link para empezar 👇</p>
+          <div className="flex flex-col gap-2 w-full max-w-[260px]">
+            <Button fullWidth onClick={handleShareWhatsApp}>
+              <Share2 className="w-4 h-4" /> Compartir por WhatsApp
+            </Button>
+            <Button variant="secondary" fullWidth onClick={handleCopyLink}>
+              <Copy className="w-4 h-4" /> {copiedLink ? '¡Link copiado!' : 'Copiar link'}
+            </Button>
+          </div>
+          <p className="text-xs text-[#6b5f55]">Esta pantalla se actualiza sola cuando alguien entra.</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -423,12 +431,23 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
         <Button
           variant="ghost"
           fullWidth
-          loading={closing}
-          onClick={handleCloseSession}
+          onClick={() => setShowCloseConfirm(true)}
         >
           Cerrar boleta
         </Button>
       )}
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        title="¿Cerrar esta boleta?"
+        description="Nadie más podrá unirse. Quienes ya están podrán seguir viendo cómo transferir."
+        confirmLabel="Cerrar boleta"
+        cancelLabel="Volver"
+        tone="danger"
+        loading={closing}
+        onConfirm={handleCloseSession}
+        onCancel={() => setShowCloseConfirm(false)}
+      />
     </div>
   )
 }
