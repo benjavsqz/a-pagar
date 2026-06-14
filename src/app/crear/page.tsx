@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { toast, Toaster } from '@/components/ui/toast'
 import { ItemRow } from '@/components/session/item-row'
 import { OcrUploader } from '@/components/session/ocr-uploader'
-import { formatCLP, formatRut } from '@/lib/utils'
+import { formatCLP, formatRut, isValidRut, normalizePaymentLink } from '@/lib/utils'
 import { saveLocalSession } from '@/lib/local-sessions'
 import { SelectField } from '@/components/ui/select-field'
 import {
@@ -205,6 +205,12 @@ export default function CrearPage() {
     const validItems = items.filter(it => it.name.trim() && parseInt(it.price) > 0)
     if (validItems.length === 0) { toast('Agrega al menos un ítem', 'error'); return }
     if (!hostName.trim()) { toast('Ingresa tu nombre', 'error'); return }
+    if (hostRut.trim() && !isValidRut(hostRut)) { toast('El RUT no es válido', 'error'); return }
+    const paymentLink = normalizePaymentLink(hostPaymentLink)
+    if (hostPaymentLink.trim() && !paymentLink) {
+      toast('El link de pago debe ser de un servicio conocido (Mercado Pago, MACH, Fintoc…)', 'error')
+      return
+    }
 
     setLoading(true)
     try {
@@ -221,7 +227,7 @@ export default function CrearPage() {
           // Solo se envían si hay valor, para no romper la creación si la
           // migración 006 aún no está aplicada (columna inexistente).
           ...(hostEmail.trim() ? { host_email: hostEmail.trim() } : {}),
-          ...(hostPaymentLink.trim() ? { host_payment_link: hostPaymentLink.trim() } : {}),
+          ...(paymentLink ? { host_payment_link: paymentLink } : {}),
           split_mode: 'items',
         })
         .select()
@@ -291,6 +297,12 @@ export default function CrearPage() {
     if (!total || total <= 0) { toast('Ingresa el monto total', 'error'); return }
     if (!n || n < 2) { toast('Ingresa al menos 2 personas', 'error'); return }
     if (!hostName.trim()) { toast('Ingresa tu nombre', 'error'); return }
+    if (hostRut.trim() && !isValidRut(hostRut)) { toast('El RUT no es válido', 'error'); return }
+    const paymentLink = normalizePaymentLink(hostPaymentLink)
+    if (hostPaymentLink.trim() && !paymentLink) {
+      toast('El link de pago debe ser de un servicio conocido (Mercado Pago, MACH, Fintoc…)', 'error')
+      return
+    }
 
     setLoading(true)
     try {
@@ -307,7 +319,7 @@ export default function CrearPage() {
           // Solo se envían si hay valor, para no romper la creación si la
           // migración 006 aún no está aplicada (columna inexistente).
           ...(hostEmail.trim() ? { host_email: hostEmail.trim() } : {}),
-          ...(hostPaymentLink.trim() ? { host_payment_link: hostPaymentLink.trim() } : {}),
+          ...(paymentLink ? { host_payment_link: paymentLink } : {}),
           split_mode: 'equal',
           split_total: total,
           split_n: n,

@@ -88,10 +88,14 @@ export function useSession(sessionId: string) {
 
   // Optimistic remove: update local state immediately, then persist
   const removeClaim = useCallback(async (itemId: string, participantId: string) => {
-    setData(prev => prev
-      ? { ...prev, claims: prev.claims.filter(c => !(c.item_id === itemId && c.participant_id === participantId)) }
-      : prev
-    )
+    // Guardamos los claims que vamos a quitar para poder restaurarlos exactos si
+    // el delete falla, sin un load() que pisaría otro estado optimista en vuelo.
+    let removed: Claim[] = []
+    setData(prev => {
+      if (!prev) return prev
+      removed = prev.claims.filter(c => c.item_id === itemId && c.participant_id === participantId)
+      return { ...prev, claims: prev.claims.filter(c => !(c.item_id === itemId && c.participant_id === participantId)) }
+    })
 
     const supabase = createClient()
     const { error } = await supabase
@@ -101,10 +105,10 @@ export function useSession(sessionId: string) {
       .eq('participant_id', participantId)
 
     if (error) {
-      load()  // Rollback by reloading
+      setData(prev => prev ? { ...prev, claims: [...prev.claims, ...removed] } : prev)
       console.error('Error removing claim:', error.message)
     }
-  }, [load])
+  }, [])
 
   const confirmPayment = useCallback(async (participantId: string): Promise<string | null> => {
     const supabase = createClient()

@@ -53,6 +53,37 @@ export function isValidRut(rut: string): boolean {
   return dv === expected
 }
 
+// Dominios de servicios de pago/transferencia chilenos permitidos en host_payment_link.
+// Evita que una boleta apunte a un sitio de phishing tras un botón "Pagar ahora"
+// (audits/01-seguridad.md, host_payment_link sin allowlist). Se permiten subdominios.
+const PAYMENT_LINK_DOMAINS = [
+  'mercadopago.cl', 'mercadopago.com', 'mpago.la',
+  'mach.cl', 'somosmach.com',
+  'fintoc.com', 'flow.cl', 'webpay.cl', 'transbank.cl',
+  'tenpo.cl', 'khipu.com', 'getnet.cl', 'fpay.cl', 'chek.cl',
+  'paypal.com', 'paypal.me',
+]
+
+/**
+ * Normaliza y valida un link de pago. Devuelve la URL https final si el dominio
+ * está en la allowlist; null si no es válido o el dominio no está permitido.
+ */
+export function normalizePaymentLink(raw: string): string | null {
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+  const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  let url: URL
+  try {
+    url = new URL(withProto)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'https:') return null
+  const host = url.hostname.toLowerCase()
+  const ok = PAYMENT_LINK_DOMAINS.some(d => host === d || host.endsWith(`.${d}`))
+  return ok ? url.toString() : null
+}
+
 export function computeItemWithClaims(item: Item, claims: Claim[]): ItemWithClaims {
   const itemClaims = claims.filter(c => c.item_id === item.id)
   const count = itemClaims.length || 1
