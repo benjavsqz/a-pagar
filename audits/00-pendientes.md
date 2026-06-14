@@ -33,11 +33,12 @@
 ## Pendiente — Frontend (03)
 - ✅ [Alto] `removeClaim` restaura los claims exactos en error (sin load() que pisa estado)
 - ✅ [Alto] `error.tsx` + `loading.tsx` global (antes: pantalla blanca ante error)
-- 🔲 [Alto] race optimismo + recarga realtime → posible doble-claim
-- 🔲 [Medio] `confirmPayment`/`closeSession` optimismo + `load()` redundante
-- 🔲 [Medio] Memoización (host page, ItemsClaimList groups/myClaimedItemIds)
-- 🔲 [Bajo] `generateSessionLink` usa `window.location.origin` (falla SSR)
-- 🔲 [Bajo] Toaster montado dos veces; usePush sin cleanup; keys por índice; cast types
+- ✅ [Medio] Memoización en ItemsClaimList (groups/myClaimedItemIds)
+- ✅ [Bajo] `generateSessionLink` cae a NEXT_PUBLIC_SITE_URL en SSR
+- ✅ [Bajo] ItemRow con key estable (`item.id`) en /crear; Toaster ya deduplicado (tanda 2)
+- 🔲 [Alto] race optimismo + recarga realtime → posible doble-claim (mitigado por filtro realtime; requiere RPC para cerrar del todo)
+- 🔲 [Medio] `confirmPayment`/`closeSession` `load()` redundante (eficiencia, no bug)
+- ℹ️ [Bajo] usePush sin cleanup: intencional (la suscripción debe persistir); casts de tipos: se cierran con el data-layer (tanda 6)
 
 ## UX/a11y (04) — ✅ tanda 2
 - ✅ [SEV-1] `window.confirm()` → `ConfirmDialog` accesible (alertdialog, Escape, foco)

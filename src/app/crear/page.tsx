@@ -58,10 +58,19 @@ type StepItems = 'scan' | 'items' | 'host'
 type StepEqual = 'amount' | 'host'
 
 interface DraftItem {
+  id: string
   name: string
   price: string
   quantity: number
 }
+
+// Cada ítem borrador lleva un id estable para usarlo como key de React (antes
+// se usaba el índice, lo que rompía el estado al borrar filas intermedias).
+const newDraft = (partial: Partial<DraftItem> = {}): DraftItem => ({
+  id: crypto.randomUUID(),
+  name: '', price: '', quantity: 1,
+  ...partial,
+})
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
@@ -119,7 +128,7 @@ export default function CrearPage() {
 
   // --- "Por ítems" state ---
   const [stepItems, setStepItems] = useState<StepItems>('scan')
-  const [items, setItems] = useState<DraftItem[]>([{ name: '', price: '', quantity: 1 }])
+  const [items, setItems] = useState<DraftItem[]>([newDraft()])
   const [propina, setPropina] = useState<0 | 10>(10)
   const [restaurantName, setRestaurantName] = useState('')
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
@@ -146,7 +155,7 @@ export default function CrearPage() {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  const addItem = () => setItems(prev => [...prev, { name: '', price: '', quantity: 1 }])
+  const addItem = () => setItems(prev => [...prev, newDraft()])
   const updateItem = (idx: number, field: keyof DraftItem, value: string | number) =>
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it))
   const removeItem = (idx: number) =>
@@ -157,7 +166,7 @@ export default function CrearPage() {
     for (const item of rawItems) {
       const existing = merged.find(g => g.name === item.name && g.price === item.price)
       if (existing) { existing.quantity += 1 }
-      else { merged.push({ name: item.name, price: item.price, quantity: 1 }) }
+      else { merged.push(newDraft({ name: item.name, price: item.price })) }
     }
     return merged
   }
@@ -514,7 +523,7 @@ export default function CrearPage() {
               </div>
               {items.map((item, idx) => (
                 <ItemRow
-                  key={idx}
+                  key={item.id}
                   name={item.name}
                   price={item.price}
                   quantity={item.quantity}

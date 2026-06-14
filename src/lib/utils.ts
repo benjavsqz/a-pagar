@@ -118,7 +118,11 @@ export function computeParticipantSummary(
 }
 
 export function generateSessionLink(sessionId: string): string {
-  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  // En el cliente usamos el origin real; en SSR caemos a la URL pública
+  // configurada para no generar un link relativo roto.
+  const base = typeof window !== 'undefined'
+    ? window.location.origin
+    : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://a-pagar.vercel.app')
   return `${base}/s/${sessionId}`
 }
 

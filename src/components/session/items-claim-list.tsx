@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CheckCircle2, Circle, Minus, Plus, Split } from 'lucide-react'
 import { formatCLP } from '@/lib/utils'
 import type { Item, Claim, Participant } from '@/types'
@@ -32,18 +32,22 @@ export function ItemsClaimList({
       return next
     })
 
-  const myClaimedItemIds = new Set(
-    claims.filter(c => c.participant_id === meId).map(c => c.item_id)
+  const myClaimedItemIds = useMemo(
+    () => new Set(claims.filter(c => c.participant_id === meId).map(c => c.item_id)),
+    [claims, meId]
   )
   const firstName = (id: string) =>
     (participants.find(p => p.id === id)?.name ?? '').split(' ')[0]
 
-  const groups: Group[] = Object.values(
-    items.reduce((map, item) => {
-      if (!map[item.name]) map[item.name] = { name: item.name, units: [] }
-      map[item.name].units.push(item)
-      return map
-    }, {} as Record<string, Group>)
+  const groups: Group[] = useMemo(
+    () => Object.values(
+      items.reduce((map, item) => {
+        if (!map[item.name]) map[item.name] = { name: item.name, units: [] }
+        map[item.name].units.push(item)
+        return map
+      }, {} as Record<string, Group>)
+    ),
+    [items]
   )
 
   return (
