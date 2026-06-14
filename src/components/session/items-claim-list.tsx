@@ -2,7 +2,32 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Circle, Minus, Plus, Split } from 'lucide-react'
 import { formatCLP } from '@/lib/utils'
+import { colorForName } from '@/hooks/use-presence'
 import type { Item, Claim, Participant } from '@/types'
+
+// Mini-avatares con la inicial de cada persona que marcó el ítem (en vivo).
+function ClaimerAvatars({ people, divide }: { people: Participant[]; divide?: number }) {
+  if (people.length === 0) return null
+  return (
+    <div className="flex items-center gap-1.5 mt-1">
+      <div className="flex -space-x-1.5">
+        {people.map(p => (
+          <span
+            key={p.id}
+            title={p.name}
+            className="w-5 h-5 rounded-full grid place-items-center text-[9px] font-bold text-white ring-[1.5px] ring-white select-none"
+            style={{ background: colorForName(p.name) }}
+          >
+            {(p.name.trim()[0] ?? '?').toUpperCase()}
+          </span>
+        ))}
+      </div>
+      {divide && divide > 1 ? (
+        <span className="text-[11px] font-semibold text-[#6b5f55]">÷{divide}</span>
+      ) : null}
+    </div>
+  )
+}
 
 interface ItemsClaimListProps {
   items: Item[]
@@ -171,10 +196,10 @@ export function ItemsClaimList({
                   : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>{item.name}</p>
-                  {shared && (
-                    <p className="text-xs text-[#6b5f55] mt-0.5">
-                      Entre {claimers.length} · ÷{itemClaims.length}
-                    </p>
+                  {/* Quién lo está marcando — visible para todos. Se oculta solo si
+                      eres tú solo (el check verde ya lo indica). */}
+                  {!(itemClaims.length === 1 && isMine) && (
+                    <ClaimerAvatars people={claimers} divide={shared ? itemClaims.length : undefined} />
                   )}
                 </div>
               </button>
