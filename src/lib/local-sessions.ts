@@ -9,6 +9,8 @@ export interface LocalSessionEntry {
   createdAt: string
   // host-specific: token secreto para confirmar pagos / cerrar la boleta
   hostToken?: string
+  // host-specific: id del participante "host" (para marcar su propio consumo)
+  hostParticipantId?: string
   // participant-specific
   participantId?: string
   participantName?: string
@@ -18,8 +20,15 @@ const KEY = 'apagar_sessions_v2'
 
 export function saveLocalSession(entry: LocalSessionEntry): void {
   if (typeof window === 'undefined') return
-  const existing = getLocalSessions().filter(e => e.id !== entry.id)
-  localStorage.setItem(KEY, JSON.stringify([entry, ...existing].slice(0, 60)))
+  const all = getLocalSessions()
+  // Fusiona con la entrada previa: un guardado parcial (p. ej. el panel del host
+  // refrescando nombre/estado) NO debe perder campos críticos como hostToken o
+  // hostParticipantId. Sin esto, con la migración 008 el host quedaría sin token
+  // y no podría confirmar pagos ni cerrar la boleta.
+  const prev = all.find(e => e.id === entry.id)
+  const merged: LocalSessionEntry = { ...prev, ...entry }
+  const rest = all.filter(e => e.id !== entry.id)
+  localStorage.setItem(KEY, JSON.stringify([merged, ...rest].slice(0, 60)))
 }
 
 export function getLocalSessions(): LocalSessionEntry[] {

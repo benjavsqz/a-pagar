@@ -3,11 +3,14 @@ import { use, useEffect, useRef, useState } from 'react'
 import { useSession } from '@/hooks/use-session'
 import { usePush } from '@/hooks/use-push'
 import { ComprobanteLink } from '@/components/session/comprobante-link'
+import { ItemsClaimList } from '@/components/session/items-claim-list'
 import { computeParticipantSummary, formatCLP, generateSessionLink, copyToClipboard } from '@/lib/utils'
+import { computeHostCollection } from '@/lib/billing'
 import { saveLocalSession } from '@/lib/local-sessions'
-import { toast, Toaster } from '@/components/ui/toast'
+import { toast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Share2, CheckCircle2, Clock, AlertCircle, Copy, ExternalLink,
   ChevronDown, ChevronUp, Loader2, ChevronLeft, Users, Utensils, Bell,
@@ -16,11 +19,13 @@ import Link from 'next/link'
 
 export default function HostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { data, loading, error, confirmPayment, closeSession } = useSession(id)
+  const { data, loading, error, confirmPayment, closeSession, addClaim, removeClaim } = useSession(id)
   const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [closing, setClosing] = useState(false)
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showMyItems, setShowMyItems] = useState(false)
   const prevPaymentCount = useRef(0)
 
   // Subscribe to push notifications as host
@@ -61,6 +66,11 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   const { session, items, participants, claims, payments } = data
   const link = generateSessionLink(id)
   const isEqual = session.split_mode === 'equal'
+
+  // El host es un participante marcado is_host: marca su consumo (cuenta para
+  // dividir ÷N) pero NO se le cobra ni aparece en la lista de quienes deben pagar.
+  const hostParticipant = participants.find(p => p.is_host) ?? null
+  const guests = participants.filter(p => !p.is_host)
 
   const handleCopyLink = async () => {
     await copyToClipboard(link)
@@ -104,10 +114,10 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const handleCloseSession = async () => {
-    if (!window.confirm('¿Cerrar esta boleta? Nadie más podrá unirse.')) return
     setClosing(true)
     const err = await closeSession()
     setClosing(false)
+    setShowCloseConfirm(false)
     if (err) {
       toast(`Error al cerrar: ${err}`, 'error')
       return
@@ -123,15 +133,20 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
   }
 
-  const summaries = participants.map(p =>
+  const summaries = guests.map(p =>
     computeParticipantSummary(p, items, claims, payments, session.propina_pct)
   )
+
+  // Lo que el propio host marcó (para resumen "tu consumo no se cobra")
+  const hostSummary = hostParticipant
+    ? computeParticipantSummary(hostParticipant, items, claims, payments, session.propina_pct)
+    : null
 
   // Recordatorio al grupo: lista de quienes aún no transfieren + montos + link.
   // No guardamos teléfonos, así que abre WhatsApp para enviarlo al chat del grupo.
   const handleRemindPending = () => {
     const pending = isEqual
-      ? participants
+      ? guests
           .filter(p => !payments.some(pay => pay.participant_id === p.id))
           .map(p => ({ name: p.name, amount: sharePerPerson }))
       : summaries
@@ -164,34 +179,30 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     ? payments.filter(p => p.confirmed_by_host).length
     : summaries.filter(s => s.payment?.confirmed_by_host).length
 
-  const confirmedAmount = isEqual
-    ? payments.filter(p => p.confirmed_by_host).reduce((sum, p) => sum + p.amount, 0)
-    : summaries.filter(s => s.payment?.confirmed_by_host).reduce((sum, s) => sum + s.total, 0)
-
-  // Lo que el host espera cobrar = lo que los DEMÁS deben.
-  // - Partes iguales: (n-1) cuotas (el host no se cobra a sí mismo)
-  // - Por ítems: la suma de lo que marcaron los participantes (lo que el host
-  //   consumió queda sin reclamar y no se cobra → así el progreso sí llega a 100%)
-  const claimedTotal = summaries.reduce((sum, s) => sum + s.total, 0)
-  const targetToCollect = isEqual
-    ? sharePerPerson * Math.max(0, (session.split_n ?? 1) - 1)
-    : claimedTotal
+  // Dinero del host: fuente única en src/lib/billing.ts, consistente con lo que
+  // cada invitado realmente ve y paga (evita la divergencia de redondeo que había
+  // entre esta vista y /cuenta). El consumo del host se excluye del cobro.
+  const { target: targetToCollect, confirmed: confirmedAmount } = computeHostCollection({
+    splitMode: session.split_mode,
+    splitTotal: session.split_total,
+    splitN: session.split_n,
+    propinaPct: session.propina_pct,
+    items, claims, participants, payments,
+  })
 
   const progressPct = targetToCollect > 0
     ? Math.min(100, Math.round((confirmedAmount / targetToCollect) * 100))
     : 0
 
-  const pendingCount = participants.length - confirmedCount
+  const pendingCount = guests.length - confirmedCount
 
   // Cuántos aún no han transferido (sin registro de pago)
   const unpaidCount = isEqual
-    ? participants.filter(p => !payments.some(pay => pay.participant_id === p.id)).length
+    ? guests.filter(p => !payments.some(pay => pay.participant_id === p.id)).length
     : summaries.filter(s => !s.payment).length
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6 gap-5">
-      <Toaster />
-
+    <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-5">
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
@@ -228,7 +239,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           <h1 className="font-display text-2xl font-bold">{session.restaurant_name ?? 'Sin nombre'}</h1>
         </div>
         <p className="text-sm text-[#6b5f55] mt-0.5">
-          {participants.length} participante{participants.length !== 1 ? 's' : ''} ·{' '}
+          {guests.length} participante{guests.length !== 1 ? 's' : ''} ·{' '}
           {confirmedCount} pagado{confirmedCount !== 1 ? 's' : ''} ·{' '}
           {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
           {isEqual && ` · partes iguales`}
@@ -294,22 +305,73 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
         </div>
       </Card>
 
+      {/* Mis ítems — el host marca lo que consumió (solo modo por ítems) */}
+      {!isEqual && hostParticipant && (
+        <Card className="overflow-hidden">
+          <button
+            onClick={() => setShowMyItems(v => !v)}
+            className="w-full p-4 flex items-center gap-3 text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#e7f9f0] flex items-center justify-center shrink-0">
+              <Utensils className="w-4 h-4 text-[#077f4e]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">Lo que consumí yo</p>
+              <p className="text-xs text-[#6b5f55] truncate">
+                {hostSummary && hostSummary.items.length > 0
+                  ? `${hostSummary.items.length} ítem${hostSummary.items.length !== 1 ? 's' : ''} · ${formatCLP(hostSummary.total)} — no se te cobra`
+                  : 'Marca tus platos para repartir bien los compartidos'}
+              </p>
+            </div>
+            {showMyItems
+              ? <ChevronUp className="w-4 h-4 text-[#6b5f55] shrink-0" />
+              : <ChevronDown className="w-4 h-4 text-[#6b5f55] shrink-0" />}
+          </button>
+          {showMyItems && (
+            <div className="px-4 pb-4 border-t border-[#f6f1ea] pt-3">
+              {items.length === 0 ? (
+                <p className="text-xs text-[#6b5f55]">No hay ítems en esta boleta.</p>
+              ) : (
+                <ItemsClaimList
+                  items={items}
+                  claims={claims}
+                  participants={participants}
+                  meId={hostParticipant.id}
+                  open={session.status === 'open'}
+                  addClaim={addClaim}
+                  removeClaim={removeClaim}
+                />
+              )}
+            </div>
+          )}
+        </Card>
+      )}
+
       {/* Participants */}
-      {participants.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-[#6b5f55] text-sm">Esperando que alguien abra el link...</p>
-          <p className="text-xs text-[#6b5f55] mt-1">Esta pantalla se actualiza automáticamente</p>
+      {guests.length === 0 ? (
+        <Card className="p-7 text-center flex flex-col items-center gap-3">
+          <p className="text-[#6b5f55] text-sm">Aún no se une nadie. Comparte el link para empezar 👇</p>
+          <div className="flex flex-col gap-2 w-full max-w-[260px]">
+            <Button fullWidth onClick={handleShareWhatsApp}>
+              <Share2 className="w-4 h-4" /> Compartir por WhatsApp
+            </Button>
+            <Button variant="secondary" fullWidth onClick={handleCopyLink}>
+              <Copy className="w-4 h-4" /> {copiedLink ? '¡Link copiado!' : 'Copiar link'}
+            </Button>
+          </div>
+          <p className="text-xs text-[#6b5f55]">Esta pantalla se actualiza sola cuando alguien entra.</p>
         </Card>
       ) : (
         <div className="space-y-3">
           <h2 className="text-xs font-semibold text-[#6b5f55] uppercase tracking-wider">Participantes</h2>
           <div className="space-y-3 stagger">
           {isEqual
-            ? participants.map(p => {
+            ? guests.map(p => {
                 const payment = payments.find(pay => pay.participant_id === p.id) ?? null
                 return (
                   <EqualParticipantCard
                     key={p.id}
+                    sessionId={id}
                     name={p.name}
                     amount={sharePerPerson}
                     payment={payment}
@@ -323,6 +385,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
             : summaries.map(s => (
                 <ParticipantCard
                   key={s.participant.id}
+                  sessionId={id}
                   summary={s}
                   propinaPct={session.propina_pct}
                   expanded={expandedParticipant === s.participant.id}
@@ -370,12 +433,23 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
         <Button
           variant="ghost"
           fullWidth
-          loading={closing}
-          onClick={handleCloseSession}
+          onClick={() => setShowCloseConfirm(true)}
         >
           Cerrar boleta
         </Button>
       )}
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        title="¿Cerrar esta boleta?"
+        description="Nadie más podrá unirse. Quienes ya están podrán seguir viendo cómo transferir."
+        confirmLabel="Cerrar boleta"
+        cancelLabel="Volver"
+        tone="danger"
+        loading={closing}
+        onConfirm={handleCloseSession}
+        onCancel={() => setShowCloseConfirm(false)}
+      />
     </div>
   )
 }
@@ -383,8 +457,9 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 // ── Equal split participant card ──────────────────────────────────────────────
 
 function EqualParticipantCard({
-  name, amount, payment, expanded, onToggle, onConfirm, isConfirming,
+  sessionId, name, amount, payment, expanded, onToggle, onConfirm, isConfirming,
 }: {
+  sessionId: string
   name: string
   amount: number
   payment: { confirmed_by_host: boolean; comprobante_url?: string | null } | null
@@ -426,7 +501,7 @@ function EqualParticipantCard({
             <span className="text-[#077f4e]">{formatCLP(amount)}</span>
           </div>
           {payment?.comprobante_url && (
-            <ComprobanteLink value={payment.comprobante_url} />
+            <ComprobanteLink value={payment.comprobante_url} sessionId={sessionId} />
           )}
           {isPaid && !isConfirmed && (
             <Button size="sm" fullWidth onClick={onConfirm} loading={isConfirming} className="mt-2">
@@ -447,8 +522,9 @@ function EqualParticipantCard({
 // ── Items participant card ────────────────────────────────────────────────────
 
 function ParticipantCard({
-  summary, propinaPct, expanded, onToggle, onConfirm, isConfirming,
+  sessionId, summary, propinaPct, expanded, onToggle, onConfirm, isConfirming,
 }: {
+  sessionId: string
   summary: ReturnType<typeof computeParticipantSummary>
   propinaPct: number
   expanded: boolean
@@ -517,7 +593,7 @@ function ParticipantCard({
           </div>
           {payment?.comprobante_url && (
             <div className="mt-2">
-              <ComprobanteLink value={payment.comprobante_url} />
+              <ComprobanteLink value={payment.comprobante_url} sessionId={sessionId} />
             </div>
           )}
           {isPaid && !isConfirmed && (
@@ -538,7 +614,7 @@ function ParticipantCard({
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-dvh flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-[#077f4e] animate-spin" />
     </div>
   )
@@ -546,7 +622,7 @@ function LoadingScreen() {
 
 function ErrorScreen({ message }: { message: string }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
+    <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4 text-center">
       <AlertCircle className="w-10 h-10 text-[#e5484d]" />
       <p className="font-medium">{message}</p>
       <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors">← Volver al inicio</Link>

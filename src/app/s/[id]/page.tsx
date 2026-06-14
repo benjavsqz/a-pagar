@@ -6,14 +6,15 @@ import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/uti
 import { saveLocalSession, getLocalSession } from '@/lib/local-sessions'
 import type { Participant } from '@/types'
 import { createClient } from '@/lib/supabase/client'
-import { toast, Toaster } from '@/components/ui/toast'
+import { toast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import {
-  CheckCircle2, Circle, Copy, Upload, Loader2, AlertCircle,
-  ArrowRight, Users, Minus, Plus, CreditCard,
+  CheckCircle2, Copy, Upload, Loader2, AlertCircle,
+  ArrowRight, Users, CreditCard, Clock,
 } from 'lucide-react'
+import { ItemsClaimList } from '@/components/session/items-claim-list'
 import Link from 'next/link'
 
 type Step = 'who' | 'items' | 'transfer' | 'done'
@@ -63,8 +64,56 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
   // ── PASO 1: ¿Quién eres? ───────────────────────────────────────────────────
   if (step === 'who') {
     if (session.status === 'closed') {
+      // Callejón evitado (audits/04-ux-a11y.md, SEV-1): aunque la boleta esté
+      // cerrada, el invitado que aún no transfirió puede ver los datos del host
+      // para coordinar y pagar directo, en vez de quedar en una pantalla muerta.
+      const bankStr = session.host_bank ?? ''
+      const hasCombined = bankStr.includes(' · ')
+      const closedDetails = [
+        { label: 'Nombre', value: session.host_name },
+        { label: 'Banco', value: hasCombined ? bankStr.split(' · ')[0] : (bankStr || null) },
+        { label: 'Tipo de cuenta', value: hasCombined ? bankStr.split(' · ')[1] : null },
+        { label: 'RUT', value: session.host_rut },
+        { label: 'Nro de cuenta', value: session.host_account },
+        { label: 'Correo', value: session.host_email },
+      ].filter(d => d.value)
+      const copyClosed = async (text: string, label: string) => {
+        await copyToClipboard(text)
+        toast(`${label} copiado ✓`)
+      }
       return (
-        <ErrorScreen message={`Esta boleta${session.restaurant_name ? ` de ${session.restaurant_name}` : ''} ya fue cerrada por ${session.host_name}.`} />
+        <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
+          <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
+          <div className="text-center mt-6">
+            <div className="w-12 h-12 rounded-2xl bg-[#ece2d5] flex items-center justify-center mx-auto mb-3">
+              <Clock className="w-6 h-6 text-[#6b5f55]" />
+            </div>
+            <h1 className="font-display text-xl font-bold">Boleta cerrada</h1>
+            <p className="text-sm text-[#6b5f55] mt-1">
+              {session.restaurant_name ? `La cuenta de ${session.restaurant_name}` : 'Esta cuenta'} ya fue cerrada por {session.host_name}. Si aún no transferiste tu parte, coordínala directo con {session.host_name}{closedDetails.length > 1 ? ' usando estos datos:' : '.'}
+            </p>
+          </div>
+          {closedDetails.length > 1 ? (
+            <div className="space-y-2">
+              {closedDetails.map(({ label, value }) => (
+                <button
+                  key={label}
+                  onClick={() => copyClosed(value!, label)}
+                  className="w-full flex items-center justify-between bg-[#ffffff] border border-[#f6f1ea] rounded-xl px-4 py-3 hover:border-[#e0d4c4] active:scale-95 transition-all"
+                >
+                  <div className="text-left">
+                    <p className="text-xs text-[#6b5f55]">{label}</p>
+                    <p className="text-sm font-medium">{value}</p>
+                  </div>
+                  <Copy className="w-4 h-4 text-[#6b5f55]" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-[#6b5f55] text-center">El anfitrión no dejó datos de transferencia acá. Contáctalo directamente.</p>
+          )}
+          <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors text-center py-2 mt-auto">← Volver al inicio</Link>
+        </div>
       )
     }
 
@@ -112,8 +161,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
       : 0
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6">
-        <Toaster />
+      <div className="min-h-dvh flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6">
         <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
 
         <div className="text-center">
@@ -177,9 +225,6 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
   if (!me) return <ErrorScreen message="Error cargando tu perfil" />
 
-  const myClaimedItemIds = new Set(
-    claims.filter(c => c.participant_id === me.id).map(c => c.item_id)
-  )
   const summary = computeParticipantSummary(me, items, claims, payments, session.propina_pct)
 
   // For equal splits: jump directly to transfer step
@@ -190,27 +235,8 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
   // ── PASO 2: Marcar ítems ───────────────────────────────────────────────────
   if (step === 'items' && !isEqual) {
-    const itemGroups: Array<{ name: string; units: typeof items }> = Object.values(
-      items.reduce((map, item) => {
-        if (!map[item.name]) map[item.name] = { name: item.name, units: [] }
-        map[item.name].units.push(item)
-        return map
-      }, {} as Record<string, { name: string; units: typeof items }>)
-    )
-
-    const handleToggle = async (groupUnits: typeof items) => {
-      const myUnit = groupUnits.find(u => myClaimedItemIds.has(u.id))
-      if (myUnit) {
-        await removeClaim(myUnit.id, me.id)
-      } else {
-        const unclaimed = groupUnits.find(u => !claims.some(c => c.item_id === u.id))
-        await addClaim((unclaimed ?? groupUnits[0]).id, me.id)
-      }
-    }
-
     return (
-      <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
-        <Toaster />
+      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
@@ -220,150 +246,22 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
           </div>
           <h1 className="text-lg font-bold">{session.restaurant_name ?? 'La cuenta'}</h1>
-          <p className="text-sm text-[#6b5f55]">Marca lo que pediste, {me.name}</p>
+          <p className="text-sm text-[#6b5f55]">
+            Marca lo que pediste, {me.name}. ¿Compartiste un plato? Toca <span className="font-medium text-[#077f4e]">Dividir</span> y que el otro también lo tome.
+          </p>
         </div>
 
         {/* Items list */}
-        <div className="flex-1 space-y-2 stagger">
-          {itemGroups.map(({ name, units }) => {
-            const isMulti = units.length > 1
-            const isMine = units.some(u => myClaimedItemIds.has(u.id))
-
-            if (!isMulti) {
-              const item = units[0]
-              const itemClaims = claims.filter(c => c.item_id === item.id)
-              const claimers = participants.filter(p => itemClaims.some(c => c.participant_id === p.id))
-              const pricePerPerson = itemClaims.length > 0
-                ? Math.ceil(item.price / itemClaims.length)
-                : item.price
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleToggle(units)}
-                  className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border transition-all active:scale-95 ${
-                    isMine
-                      ? 'bg-[#0bb673]/10 border-[#0bb673]/40'
-                      : 'bg-[#ffffff] border-[#f6f1ea] hover:border-[#e0d4c4]'
-                  }`}
-                >
-                  {isMine
-                    ? <CheckCircle2 className="w-5 h-5 text-[#077f4e] shrink-0 check-pop" />
-                    : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />
-                  }
-                  <div className="flex-1 text-left min-w-0">
-                    <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>
-                      {item.name}
-                    </p>
-                    {claimers.length > 1 && (
-                      <p className="text-xs text-[#6b5f55] mt-0.5">
-                        Compartido con {claimers.filter(p => p.id !== me.id).map(p => p.name).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>
-                      {formatCLP(pricePerPerson)}
-                    </p>
-                    {itemClaims.length > 1 && <p className="text-xs text-[#6b5f55]">÷ {itemClaims.length}</p>}
-                  </div>
-                </button>
-              )
-            }
-
-            const unitPrice = units[0].price
-            const myCount = units.filter(u => myClaimedItemIds.has(u.id)).length
-            const freeCount = units.filter(u => !claims.some(c => c.item_id === u.id)).length
-
-            const handleAdd = async () => {
-              const freeUnit = units.find(u => !claims.some(c => c.item_id === u.id))
-              if (freeUnit) await addClaim(freeUnit.id, me.id)
-            }
-            const handleRemoveOne = async () => {
-              const myUnit = units.find(u => myClaimedItemIds.has(u.id))
-              if (myUnit) await removeClaim(myUnit.id, me.id)
-            }
-
-            return (
-              <div
-                key={name}
-                className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
-                  isMine
-                    ? 'bg-[#0bb673]/10 border-[#0bb673]/40'
-                    : 'bg-[#ffffff] border-[#f6f1ea]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {isMine
-                    ? <CheckCircle2 className="w-5 h-5 text-[#077f4e] shrink-0 check-pop" />
-                    : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />
-                  }
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>
-                      {name}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right">
-                      <span className="text-xs font-semibold bg-[#ece2d5] text-[#6b5f55] px-2 py-0.5 rounded-full">×{units.length}</span>
-                      <p className={`text-sm font-bold mt-0.5 ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>
-                        {formatCLP(unitPrice)} c/u
-                      </p>
-                    </div>
-                    <div className="flex items-center bg-[#f6f1ea] border border-[#ece2d5] rounded-lg">
-                      <button
-                        onClick={handleRemoveOne}
-                        disabled={myCount === 0}
-                        aria-label="Quitar uno"
-                        className="w-7 h-7 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-20 transition-colors"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className={`w-5 text-center text-xs font-bold tabular-nums select-none ${myCount > 0 ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>
-                        {myCount}
-                      </span>
-                      <button
-                        onClick={handleAdd}
-                        disabled={freeCount === 0}
-                        aria-label="Agregar uno"
-                        className="w-7 h-7 flex items-center justify-center text-[#6b5f55] hover:text-[#077f4e] disabled:opacity-20 transition-colors"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5 mt-2.5 ml-8">
-                  {units.map((unit, idx) => {
-                    const unitClaims = claims.filter(c => c.item_id === unit.id)
-                    const unitClaimers = participants.filter(p => unitClaims.some(c => c.participant_id === p.id))
-                    const isMyUnit = myClaimedItemIds.has(unit.id)
-                    const isShared = unitClaims.length > 1
-                    const chipLabel = isMyUnit
-                      ? 'Tú' + (isShared ? ` + ${unitClaimers.filter(p => p.id !== me.id).map(p => p.name.split(' ')[0]).join('+')}` : '')
-                      : unitClaimers.length > 0
-                      ? unitClaimers.map(p => p.name.split(' ')[0]).join('+')
-                      : `Libre ${idx + 1}`
-
-                    return (
-                      <span
-                        key={unit.id}
-                        className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                          isMyUnit
-                            ? 'bg-[#0bb673] text-white'
-                            : unitClaimers.length > 0
-                            ? 'bg-[#ece2d5] text-[#4a423b]'
-                            : 'border border-dashed border-[#e0d4c4] text-[#6b5f55]'
-                        }`}
-                      >
-                        {chipLabel}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
+        <div className="flex-1">
+          <ItemsClaimList
+            items={items}
+            claims={claims}
+            participants={participants}
+            meId={me.id}
+            open={session.status === 'open'}
+            addClaim={addClaim}
+            removeClaim={removeClaim}
+          />
         </div>
 
         {/* Sticky total */}
@@ -453,6 +351,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             sessionId: id,
             event: 'payment_received',
             payload: {
+              participantId: me.id,
               participantName: me.name,
               amount: formatCLP(myTotal),
               url: `/host/${id}`,
@@ -487,6 +386,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             sessionId: id,
             event: 'payment_received',
             payload: {
+              participantId: me.id,
               participantName: me.name,
               amount: formatCLP(myTotal),
               url: `/host/${id}`,
@@ -502,8 +402,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-      <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
-        <Toaster />
+      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-6 h-6 rounded-md bg-[#0bb673] flex items-center justify-center">
@@ -517,7 +416,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         {/* Total */}
         <Card variant="premium" className="p-4 text-center">
           <p className="text-xs text-[#6b5f55] mb-1">Transferir a {session.host_name}</p>
-          <p className="money text-4xl font-black text-[#077f4e]" style={{ animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(myTotal)}</p>
+          <p className="money text-[clamp(1.9rem,9vw,2.25rem)] font-black text-[#077f4e] break-words" style={{ animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(myTotal)}</p>
           {!isEqual && session.propina_pct > 0 && (
             <p className="text-xs text-[#6b5f55] mt-1">
               {formatCLP(summary.subtotal)} + propina {formatCLP(summary.propina)}
@@ -600,9 +499,15 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           <Button fullWidth size="lg" onClick={() => fileRef.current?.click()} loading={uploadingComprobante}>
             <Upload className="w-4 h-4" /> Adjuntar comprobante
           </Button>
-          <Button variant="secondary" fullWidth onClick={handleMarkAsPaid} disabled={uploadingComprobante}>
-            Ya transferí (sin comprobante)
-          </Button>
+          {/* Acción secundaria de menor jerarquía: adjuntar comprobante es lo
+              recomendado, esto es el escape (audits/04-ux-a11y.md, SEV-2). */}
+          <button
+            onClick={handleMarkAsPaid}
+            disabled={uploadingComprobante}
+            className="w-full text-sm text-[#6b5f55] hover:text-[#4a423b] py-2 transition-colors disabled:opacity-40"
+          >
+            Ya transferí, sin comprobante
+          </button>
           {!isEqual && (
             <button
               onClick={() => setStep('items')}
@@ -618,8 +523,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
   // ── PASO 4: Listo ──────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6 text-center overflow-hidden">
-      <Toaster />
+    <div className="min-h-dvh flex flex-col items-center justify-center max-w-sm mx-auto px-5 gap-6 text-center overflow-hidden">
 
       {/* Success glow */}
       <div className="pointer-events-none fixed inset-0 bg-[#ffd9c7]/40 blur-[120px] -z-10" />
@@ -662,7 +566,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-dvh flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-[#077f4e] animate-spin" />
     </div>
   )
@@ -670,7 +574,7 @@ function LoadingScreen() {
 
 function ErrorScreen({ message }: { message: string }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
+    <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4 text-center">
       <AlertCircle className="w-10 h-10 text-[#e5484d]" />
       <p className="font-medium">{message}</p>
       <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors">← Volver al inicio</Link>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { formatCLP } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,11 +27,9 @@ export async function POST(req: NextRequest) {
     const sessionId = clean(body.sessionId, 40)
     const event = body.event as PushEvent
     const rawPayload = (typeof body.payload === 'object' && body.payload !== null ? body.payload : {}) as Record<string, unknown>
+    // Solo confiamos en participantId y url del body; nombre/monto se leen de la DB.
     const payload = {
       participantId: clean(rawPayload.participantId, 40),
-      participantName: clean(rawPayload.participantName),
-      hostName: clean(rawPayload.hostName),
-      amount: clean(rawPayload.amount, 20),
       url: clean(rawPayload.url, 100),
     }
 
@@ -47,6 +46,38 @@ export async function POST(req: NextRequest) {
     // Preferimos el cliente admin (service-role) para poder cerrar la lectura
     // pública de push_subscriptions; si la key no está, caemos al anon.
     const supabase = createAdminClient() ?? await createClient()
+
+    // Autorización sin auth: solo se permite notificar eventos que correspondan
+    // a un estado REAL en la DB. Sin esto, cualquiera con la anon key podía
+    // disparar notificaciones arbitrarias (audits/01-seguridad.md, crítico push).
+    if (!payload.participantId) {
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    }
+    const { data: pay } = await supabase
+      .from('payments')
+      .select('confirmed_by_host, amount')
+      .eq('session_id', sessionId)
+      .eq('participant_id', payload.participantId)
+      .maybeSingle()
+    if (!pay) {
+      // No hay pago registrado para ese participante → notificación no legítima
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+    if (event === 'payment_confirmed' && pay.confirmed_by_host !== true) {
+      // Solo se notifica "confirmado" si el host realmente lo confirmó en la DB
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
+    // El texto de la notificación se arma con datos de la DB, NO del body: así un
+    // atacante con un participantId real no puede inyectar nombre/monto falsos
+    // (audits/01-seguridad.md, push sin auth).
+    const [{ data: part }, { data: sess }] = await Promise.all([
+      supabase.from('participants').select('name').eq('id', payload.participantId).maybeSingle(),
+      supabase.from('sessions').select('host_name').eq('id', sessionId).maybeSingle(),
+    ])
+    const participantName = clean(part?.name) || 'Alguien'
+    const hostName = clean(sess?.host_name) || 'el anfitrión'
+    const amountText = typeof pay.amount === 'number' ? formatCLP(pay.amount) : ''
 
     // Determine which role to notify
     const targetRole = event === 'payment_received' ? 'host' : 'participant'
@@ -68,11 +99,11 @@ export async function POST(req: NextRequest) {
     const notifications = {
       payment_received: {
         title: '💸 Nuevo pago recibido',
-        body: `${payload.participantName} te transfirió ${payload.amount}. Confirma cuando lo recibas.`,
+        body: `${participantName} te transfirió ${amountText}. Confirma cuando lo recibas.`,
       },
       payment_confirmed: {
         title: '✅ ¡Pago confirmado!',
-        body: `Tu pago de ${payload.amount} fue confirmado por ${payload.hostName}.`,
+        body: `Tu pago de ${amountText} fue confirmado por ${hostName}.`,
       },
     } as const
 

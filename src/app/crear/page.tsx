@@ -1,35 +1,21 @@
 'use client'
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { toast, Toaster } from '@/components/ui/toast'
+import { toast } from '@/components/ui/toast'
 import { ItemRow } from '@/components/session/item-row'
 import { OcrUploader } from '@/components/session/ocr-uploader'
-import { formatCLP, formatRut } from '@/lib/utils'
+import { HostDataForm } from '@/components/session/host-data-form'
+import { StepIndicator } from '@/components/session/step-indicator'
+import { formatCLP, isValidRut, normalizePaymentLink } from '@/lib/utils'
 import { saveLocalSession } from '@/lib/local-sessions'
-import { SelectField } from '@/components/ui/select-field'
 import {
-  Plus, ArrowRight, ChevronLeft, Check, ChevronDown, ChevronUp,
+  Plus, ArrowRight, ChevronLeft, ChevronDown, ChevronUp,
   ScanLine, Users, RefreshCw, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
-
-const BANKS = [
-  'Banco Estado', 'Banco de Chile', 'BCI', 'Santander', 'BBVA', 'Itaú',
-  'Scotiabank', 'Banco Security', 'BICE', 'Banco Consorcio', 'Banco Internacional',
-  'Falabella', 'Banco Ripley', 'Coopeuch', 'Mercado Pago', 'MACH', 'Tenpo', 'Otro',
-].map(b => ({ value: b, label: b }))
-
-const ACCOUNT_TYPES = [
-  { value: 'Cuenta Corriente', label: 'Cuenta Corriente' },
-  { value: 'Cuenta Vista', label: 'Cuenta Vista' },
-  { value: 'Cuenta RUT', label: 'Cuenta RUT (BancoEstado)' },
-  { value: 'Cuenta de Ahorro', label: 'Cuenta de Ahorro' },
-  { value: 'Cuenta Digital', label: 'Cuenta Digital (MACH, Mercado Pago…)' },
-  { value: 'Otro', label: 'Otro' },
-]
 
 /**
  * Genera y registra el token secreto de anfitrión (migración 005).
@@ -58,10 +44,19 @@ type StepItems = 'scan' | 'items' | 'host'
 type StepEqual = 'amount' | 'host'
 
 interface DraftItem {
+  id: string
   name: string
   price: string
   quantity: number
 }
+
+// Cada ítem borrador lleva un id estable para usarlo como key de React (antes
+// se usaba el índice, lo que rompía el estado al borrar filas intermedias).
+const newDraft = (partial: Partial<DraftItem> = {}): DraftItem => ({
+  id: crypto.randomUUID(),
+  name: '', price: '', quantity: 1,
+  ...partial,
+})
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
@@ -76,39 +71,6 @@ const STEPS_EQUAL: { id: StepEqual; label: string }[] = [
   { id: 'host', label: 'Datos' },
 ]
 
-function StepIndicator({ steps, currentId }: { steps: { id: string; label: string }[]; currentId: string }) {
-  const currentIndex = steps.findIndex(s => s.id === currentId)
-  return (
-    <div className="flex items-center mb-7">
-      {steps.map((step, idx) => (
-        <Fragment key={step.id}>
-          <div className="flex flex-col items-center gap-1.5">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-              idx < currentIndex
-                ? 'bg-[#0bb673] text-white'
-                : idx === currentIndex
-                ? 'bg-[#0bb673] text-white shadow-[0_0_16px_rgba(11,182,115,0.35)]'
-                : 'bg-[#f6f1ea] text-[#6b5f55] border border-[#ece2d5]'
-            }`}>
-              {idx < currentIndex ? <Check className="w-3.5 h-3.5" /> : <span>{idx + 1}</span>}
-            </div>
-            <span className={`text-xs font-medium transition-colors ${
-              idx <= currentIndex ? 'text-[#1a1614]' : 'text-[#6b5f55]'
-            }`}>
-              {step.label}
-            </span>
-          </div>
-          {idx < steps.length - 1 && (
-            <div className={`flex-1 h-px mx-2 mb-5 transition-colors duration-500 ${
-              idx < currentIndex ? 'bg-[#0bb673]/50' : 'bg-[#ece2d5]'
-            }`} />
-          )}
-        </Fragment>
-      ))}
-    </div>
-  )
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CrearPage() {
@@ -119,7 +81,7 @@ export default function CrearPage() {
 
   // --- "Por ítems" state ---
   const [stepItems, setStepItems] = useState<StepItems>('scan')
-  const [items, setItems] = useState<DraftItem[]>([{ name: '', price: '', quantity: 1 }])
+  const [items, setItems] = useState<DraftItem[]>([newDraft()])
   const [propina, setPropina] = useState<0 | 10>(10)
   const [restaurantName, setRestaurantName] = useState('')
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
@@ -146,7 +108,7 @@ export default function CrearPage() {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  const addItem = () => setItems(prev => [...prev, { name: '', price: '', quantity: 1 }])
+  const addItem = () => setItems(prev => [...prev, newDraft()])
   const updateItem = (idx: number, field: keyof DraftItem, value: string | number) =>
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it))
   const removeItem = (idx: number) =>
@@ -157,7 +119,7 @@ export default function CrearPage() {
     for (const item of rawItems) {
       const existing = merged.find(g => g.name === item.name && g.price === item.price)
       if (existing) { existing.quantity += 1 }
-      else { merged.push({ name: item.name, price: item.price, quantity: 1 }) }
+      else { merged.push(newDraft({ name: item.name, price: item.price })) }
     }
     return merged
   }
@@ -205,6 +167,12 @@ export default function CrearPage() {
     const validItems = items.filter(it => it.name.trim() && parseInt(it.price) > 0)
     if (validItems.length === 0) { toast('Agrega al menos un ítem', 'error'); return }
     if (!hostName.trim()) { toast('Ingresa tu nombre', 'error'); return }
+    if (hostRut.trim() && !isValidRut(hostRut)) { toast('El RUT no es válido', 'error'); return }
+    const paymentLink = normalizePaymentLink(hostPaymentLink)
+    if (hostPaymentLink.trim() && !paymentLink) {
+      toast('El link de pago debe ser de un servicio conocido (Mercado Pago, MACH, Fintoc…)', 'error')
+      return
+    }
 
     setLoading(true)
     try {
@@ -221,7 +189,7 @@ export default function CrearPage() {
           // Solo se envían si hay valor, para no romper la creación si la
           // migración 006 aún no está aplicada (columna inexistente).
           ...(hostEmail.trim() ? { host_email: hostEmail.trim() } : {}),
-          ...(hostPaymentLink.trim() ? { host_payment_link: hostPaymentLink.trim() } : {}),
+          ...(paymentLink ? { host_payment_link: paymentLink } : {}),
           split_mode: 'items',
         })
         .select()
@@ -243,6 +211,25 @@ export default function CrearPage() {
       const { error: itemsErr } = await supabase.from('items').insert(dbItems)
       if (itemsErr) throw new Error(itemsErr.message)
 
+      // El host pasa a ser un participante (is_host) para poder marcar lo que
+      // consumió. Se crea vía RPC SECURITY DEFINER que valida el host_token: el
+      // cliente NO puede insertar is_host=true directamente (migración 008).
+      // Requiere el token; si no hay (migración 005/008 sin aplicar) se omite
+      // (modo legacy: el host no es participante y su consumo se asume como resto).
+      let hostParticipantId: string | undefined
+      if (hostToken) {
+        const { data: hostPId, error: hostPErr } = await supabase.rpc('register_host_participant', {
+          p_session_id: session.id,
+          p_name: hostName.trim(),
+          p_token: hostToken,
+        })
+        if (hostPErr) {
+          console.warn('No se pudo crear participante host (¿migración 008 sin aplicar?):', hostPErr.message)
+        } else {
+          hostParticipantId = (hostPId as string | null) ?? undefined
+        }
+      }
+
       saveLocalSession({
         id: session.id,
         role: 'host',
@@ -251,6 +238,7 @@ export default function CrearPage() {
         splitMode: 'items',
         createdAt: session.created_at,
         hostToken,
+        hostParticipantId,
       })
 
       router.push(`/host/${session.id}`)
@@ -271,6 +259,12 @@ export default function CrearPage() {
     if (!total || total <= 0) { toast('Ingresa el monto total', 'error'); return }
     if (!n || n < 2) { toast('Ingresa al menos 2 personas', 'error'); return }
     if (!hostName.trim()) { toast('Ingresa tu nombre', 'error'); return }
+    if (hostRut.trim() && !isValidRut(hostRut)) { toast('El RUT no es válido', 'error'); return }
+    const paymentLink = normalizePaymentLink(hostPaymentLink)
+    if (hostPaymentLink.trim() && !paymentLink) {
+      toast('El link de pago debe ser de un servicio conocido (Mercado Pago, MACH, Fintoc…)', 'error')
+      return
+    }
 
     setLoading(true)
     try {
@@ -287,7 +281,7 @@ export default function CrearPage() {
           // Solo se envían si hay valor, para no romper la creación si la
           // migración 006 aún no está aplicada (columna inexistente).
           ...(hostEmail.trim() ? { host_email: hostEmail.trim() } : {}),
-          ...(hostPaymentLink.trim() ? { host_payment_link: hostPaymentLink.trim() } : {}),
+          ...(paymentLink ? { host_payment_link: paymentLink } : {}),
           split_mode: 'equal',
           split_total: total,
           split_n: n,
@@ -337,8 +331,7 @@ export default function CrearPage() {
 
   if (splitMode === null) {
     return (
-      <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
-        <Toaster />
+      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-8">
           <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]">
             <ChevronLeft className="w-5 h-5" />
@@ -413,8 +406,7 @@ export default function CrearPage() {
 
   if (splitMode === 'items') {
     return (
-      <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
-        <Toaster />
+      <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-2">
           <button
             onClick={goBackItems}
@@ -484,7 +476,7 @@ export default function CrearPage() {
               </div>
               {items.map((item, idx) => (
                 <ItemRow
-                  key={idx}
+                  key={item.id}
                   name={item.name}
                   price={item.price}
                   quantity={item.quantity}
@@ -501,7 +493,9 @@ export default function CrearPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold">Propina</p>
-                  <p className="text-xs text-[#6b5f55] mt-0.5">Proporcional al consumo</p>
+                  <p className="text-xs text-[#6b5f55] mt-0.5">
+                    {propina === 0 ? 'No se agregará propina' : 'Proporcional al consumo de cada uno'}
+                  </p>
                 </div>
                 <div className="flex gap-1.5 bg-[#f6f1ea] border border-[#ece2d5] rounded-full p-1">
                   {([0, 10] as const).map(pct => (
@@ -598,8 +592,7 @@ export default function CrearPage() {
   const sharePerPerson = nNum > 0 ? Math.ceil(totalNum / nNum) : 0
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto px-4 py-6">
-      <Toaster />
+    <div className="min-h-dvh flex flex-col max-w-md mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-2">
         <button
           onClick={goBackEqual}
@@ -723,104 +716,6 @@ export default function CrearPage() {
           hint={`Cada persona te transferirá ${formatCLP(sharePerPerson)}`}
         />
       )}
-    </div>
-  )
-}
-
-// ── Shared host data form ─────────────────────────────────────────────────────
-
-function HostDataForm({
-  hostName, setHostName,
-  hostBank, setHostBank,
-  hostAccountType, setHostAccountType,
-  hostAccount, setHostAccount,
-  hostRut, setHostRut,
-  hostEmail, setHostEmail,
-  hostPaymentLink, setHostPaymentLink,
-  loading, onSubmit, submitLabel, hint,
-}: {
-  hostName: string; setHostName: (v: string) => void
-  hostBank: string; setHostBank: (v: string) => void
-  hostAccountType: string; setHostAccountType: (v: string) => void
-  hostAccount: string; setHostAccount: (v: string) => void
-  hostRut: string; setHostRut: (v: string) => void
-  hostEmail: string; setHostEmail: (v: string) => void
-  hostPaymentLink: string; setHostPaymentLink: (v: string) => void
-  loading: boolean
-  onSubmit: () => void
-  submitLabel: string
-  hint?: string
-}) {
-  return (
-    <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-8">
-      <p className="text-sm text-[#6b5f55] leading-relaxed">
-        {hint ?? 'Tus datos de transferencia aparecerán para que los demás sepan a dónde pagarte.'}
-      </p>
-
-      <Input
-        label="Tu nombre *"
-        placeholder="Ej: Benja, Cami..."
-        value={hostName}
-        onChange={e => setHostName(e.target.value)}
-      />
-
-      <SelectField
-        label="Banco"
-        value={hostBank}
-        onChange={setHostBank}
-        placeholder="Selecciona tu banco"
-        options={BANKS}
-      />
-
-      <SelectField
-        label="Tipo de cuenta"
-        value={hostAccountType}
-        onChange={setHostAccountType}
-        placeholder="Selecciona el tipo"
-        options={ACCOUNT_TYPES}
-      />
-
-      <Input
-        label="Nro de cuenta"
-        placeholder="Ej: 19438685"
-        value={hostAccount}
-        onChange={e => setHostAccount(e.target.value)}
-        inputMode="numeric"
-      />
-
-      <Input
-        label="RUT"
-        placeholder="12.345.678-9"
-        value={hostRut}
-        onChange={e => setHostRut(formatRut(e.target.value))}
-        inputMode="numeric"
-      />
-
-      <Input
-        label="Correo"
-        placeholder="tucorreo@ejemplo.cl"
-        value={hostEmail}
-        onChange={e => setHostEmail(e.target.value)}
-        type="email"
-        inputMode="email"
-      />
-
-      <div>
-        <Input
-          label="Link de pago (opcional)"
-          placeholder="Mercado Pago, MACH, Fintoc, tu alias…"
-          value={hostPaymentLink}
-          onChange={e => setHostPaymentLink(e.target.value)}
-          inputMode="url"
-        />
-        <p className="text-xs text-[#9a8d82] mt-1.5 px-0.5">
-          Si lo pegas, los demás verán un botón “Pagar ahora” que lo abre directo. Igual mostramos tus datos para transferir desde cualquier banco.
-        </p>
-      </div>
-
-      <Button fullWidth loading={loading} onClick={onSubmit}>
-        {submitLabel}
-      </Button>
     </div>
   )
 }

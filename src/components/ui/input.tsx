@@ -27,7 +27,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full h-12 bg-[#ffffff] border border-[#ece2d5] rounded-xl text-[#1a1614] placeholder:text-[#8a7d71] text-sm transition-all focus:outline-none focus:border-[#0bb673]/55 focus:bg-[#ffffff] focus:shadow-[0_0_0_3px_rgba(11,182,115,0.1)]',
+            'w-full h-12 bg-[#ffffff] border border-[#ece2d5] rounded-xl text-[#1a1614] placeholder:text-[#6b5f55] text-sm transition-all focus:outline-none focus:border-[#0bb673]/55 focus:bg-[#ffffff] focus:shadow-[0_0_0_3px_rgba(11,182,115,0.1)]',
             prefix ? 'pl-9 pr-3.5' : 'px-3.5',
             error && 'border-[#e5484d]/50 focus:border-[#e5484d]/50 focus:shadow-[0_0_0_3px_rgba(255,77,87,0.08)]',
             className,
