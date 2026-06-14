@@ -1,7 +1,9 @@
 'use client'
 import { use, useState, useRef } from 'react'
 import { useSession } from '@/hooks/use-session'
+import { usePresence } from '@/hooks/use-presence'
 import { usePush } from '@/hooks/use-push'
+import { PresenceBubbles } from '@/components/session/presence-bubbles'
 import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/utils'
 import { saveLocalSession, getLocalSession } from '@/lib/local-sessions'
 import type { Participant } from '@/types'
@@ -21,7 +23,7 @@ type Step = 'who' | 'items' | 'transfer' | 'done'
 
 export default function ParticipantPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { data, loading, error, addClaim, removeClaim } = useSession(id)
+  const { data, loading, error, addClaim, removeClaim, notifyChange } = useSession(id)
 
   const [step, setStep] = useState<Step>('who')
   const [me, setMe] = useState<Participant | null>(null)
@@ -36,6 +38,9 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
     participantId: me?.id,
     role: 'participant',
   })
+
+  // Presencia en vivo (burbujas estilo Google Docs) una vez sabemos quién eres
+  const presence = usePresence(id, me ? { name: me.name, role: 'participant' } : null)
 
   // Restore participant from localStorage if returning.
   // Render-phase update (patrón "adjusting state when props change"): corre una
@@ -139,6 +144,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
       const participant = p as Participant
       setMe(participant)
+      notifyChange() // avisa al host/otros que entró alguien nuevo
 
       saveLocalSession({
         id,
@@ -249,6 +255,11 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           <p className="text-sm text-[#6b5f55] mt-1">
             Marca lo que pediste, {me.name}. ¿Compartiste un plato? Toca <span className="font-medium text-[#0a6f47]">Dividir</span> y que el otro también lo tome.
           </p>
+          {presence.length > 0 && (
+            <div className="mt-3">
+              <PresenceBubbles people={presence} />
+            </div>
+          )}
         </div>
 
         {/* Items list */}
@@ -349,6 +360,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           paid_at: new Date().toISOString(),
         }, { onConflict: 'session_id,participant_id' })
         if (payError) throw payError
+        notifyChange() // refresca al host en vivo
         toast('Comprobante enviado ✓')
         // Notify host
         fetch('/api/push/send', {
@@ -385,6 +397,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           paid_at: new Date().toISOString(),
         }, { onConflict: 'session_id,participant_id' })
         if (payError) throw payError
+        notifyChange() // refresca al host en vivo
         // Notify host
         fetch('/api/push/send', {
           method: 'POST',

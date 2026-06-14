@@ -1,6 +1,8 @@
 'use client'
 import { use, useEffect, useRef, useState } from 'react'
 import { useSession } from '@/hooks/use-session'
+import { usePresence } from '@/hooks/use-presence'
+import { PresenceBubbles } from '@/components/session/presence-bubbles'
 import { usePush } from '@/hooks/use-push'
 import { ComprobanteLink } from '@/components/session/comprobante-link'
 import { ItemsClaimList } from '@/components/session/items-claim-list'
@@ -20,6 +22,7 @@ import Link from 'next/link'
 export default function HostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { data, loading, error, confirmPayment, closeSession, addClaim, removeClaim } = useSession(id)
+  const presence = usePresence(id, data?.session ? { name: data.session.host_name ?? 'Anfitrión', role: 'host' } : null)
   const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
@@ -244,6 +247,11 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
           {isEqual && ` · partes iguales`}
         </p>
+        {presence.length > 0 && (
+          <div className="mt-3">
+            <PresenceBubbles people={presence} />
+          </div>
+        )}
       </div>
 
       {/* Cuerpo — 2 columnas en desktop */}

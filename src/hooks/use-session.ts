@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { getLocalSession } from '@/lib/local-sessions'
 import type { Session, Item, Participant, Claim, Payment, SessionWithData } from '@/types'
@@ -8,6 +9,9 @@ export function useSession(sessionId: string) {
   const [data, setData] = useState<SessionWithData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Canal de Broadcast: postgres_changes no entrega eventos en este proyecto,
+  // así que sincronizamos con un mensaje "sync" que emite quien escribe.
+  const channelRef = useRef<RealtimeChannel | null>(null)
 
   const load = useCallback(async () => {
     const supabase = createClient()
@@ -48,17 +52,20 @@ export function useSession(sessionId: string) {
     load()
     const supabase = createClient()
 
-    const channel = supabase
-      .channel(`session:${sessionId}`)
-      // claims.session_id existe desde la migración 005 (lo rellena un trigger),
-      // así filtramos por sesión y no recargamos ante claims de otras boletas.
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'claims', filter: `session_id=eq.${sessionId}` }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `session_id=eq.${sessionId}` }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `session_id=eq.${sessionId}` }, () => load())
-      .subscribe()
+    // Broadcast (no postgres_changes): cada cliente que cambia algo emite "sync"
+    // y los demás recargan. self:false → quien emite no se recarga a sí mismo
+    // (ya hizo su update optimista).
+    const channel = supabase.channel(`rt:${sessionId}`, { config: { broadcast: { self: false } } })
+    channel.on('broadcast', { event: 'sync' }, () => load()).subscribe()
+    channelRef.current = channel
 
-    return () => { supabase.removeChannel(channel) }
+    return () => { channelRef.current = null; supabase.removeChannel(channel) }
   }, [sessionId, load])
+
+  // Avisa a los demás clientes que hubo un cambio en la boleta.
+  const notifyChange = useCallback(() => {
+    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+  }, [])
 
   // Optimistic add: update local state immediately, then persist
   const addClaim = useCallback(async (itemId: string, participantId: string) => {
@@ -83,8 +90,10 @@ export function useSession(sessionId: string) {
         : prev
       )
       console.error('Error adding claim:', error.message)
+    } else {
+      notifyChange()
     }
-  }, [])
+  }, [notifyChange])
 
   // Optimistic remove: update local state immediately, then persist
   const removeClaim = useCallback(async (itemId: string, participantId: string) => {
@@ -107,8 +116,10 @@ export function useSession(sessionId: string) {
     if (error) {
       setData(prev => prev ? { ...prev, claims: [...prev.claims, ...removed] } : prev)
       console.error('Error removing claim:', error.message)
+    } else {
+      notifyChange()
     }
-  }, [])
+  }, [notifyChange])
 
   const confirmPayment = useCallback(async (participantId: string): Promise<string | null> => {
     const supabase = createClient()
@@ -137,8 +148,9 @@ export function useSession(sessionId: string) {
 
     // Also force a reload to sync any other changes
     await load()
+    notifyChange()
     return null
-  }, [sessionId, load])
+  }, [sessionId, load, notifyChange])
 
   const closeSession = useCallback(async (): Promise<string | null> => {
     const supabase = createClient()
@@ -155,8 +167,9 @@ export function useSession(sessionId: string) {
       : prev
     )
     await load()
+    notifyChange()
     return null
-  }, [sessionId, load])
+  }, [sessionId, load, notifyChange])
 
-  return { data, loading, error, refetch: load, addClaim, removeClaim, confirmPayment, closeSession }
+  return { data, loading, error, refetch: load, addClaim, removeClaim, confirmPayment, closeSession, notifyChange }
 }
