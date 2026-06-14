@@ -7,6 +7,7 @@ import { formatCLP } from '@/lib/utils'
 import { computeHostCollection } from '@/lib/billing'
 import { getLocalSessions, type LocalSessionEntry } from '@/lib/local-sessions'
 import { Button } from '@/components/ui/button'
+import { LogoMark } from '@/components/brand/logo-mark'
 import {
   ChevronLeft, Plus, Loader2, Utensils, CheckCircle2,
   Clock, Users, ArrowUpRight, TrendingUp, Share2,
@@ -140,9 +141,7 @@ export default function CuentaPage() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#0bb673] flex items-center justify-center">
-            <span className="text-white text-xs font-black leading-none">$</span>
-          </div>
+          <LogoMark className="w-7 h-7" />
           <span className="text-base font-black tracking-tight">A-Pagar</span>
         </div>
         <h1 className="font-display text-xl font-bold ml-1">Mis boletas</h1>

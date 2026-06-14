@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { createClient } from '@/lib/supabase/server'
+import { logoDataUri } from '@/lib/logo'
 
 export const alt = 'Te invitaron a dividir la cuenta — A-Pagar'
 export const size = { width: 1200, height: 630 }
@@ -42,12 +43,8 @@ export default async function SessionOg({ params }: { params: Promise<{ id: stri
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div style={{
-            background: '#0bb673', width: 64, height: 64, display: 'flex',
-            alignItems: 'center', justifyContent: 'center', borderRadius: 16,
-          }}>
-            <span style={{ color: '#fff', fontSize: 42, fontWeight: 900 }}>$</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img width={70} height={70} src={logoDataUri({ radius: 18 })} alt="" />
           <span style={{ color: '#1a1614', fontSize: 44, fontWeight: 900, letterSpacing: -1 }}>A-Pagar</span>
         </div>
         <span style={{ color: '#1a1614', fontSize: 60, fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>

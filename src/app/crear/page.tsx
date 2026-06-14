@@ -16,6 +16,7 @@ import {
   ScanLine, Users, RefreshCw, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
+import { LogoMark } from '@/components/brand/logo-mark'
 
 /**
  * Genera y registra el token secreto de anfitrión (migración 005).
@@ -337,9 +338,7 @@ export default function CrearPage() {
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#0bb673] flex items-center justify-center">
-              <span className="text-white text-xs font-black leading-none">$</span>
-            </div>
+            <LogoMark className="w-7 h-7" />
             <span className="text-base font-black tracking-tight">A-Pagar</span>
           </div>
         </div>

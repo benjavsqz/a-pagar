@@ -4,6 +4,7 @@ import { useSession } from '@/hooks/use-session'
 import { usePresence } from '@/hooks/use-presence'
 import { usePush } from '@/hooks/use-push'
 import { PresenceBubbles } from '@/components/session/presence-bubbles'
+import { LogoMark } from '@/components/brand/logo-mark'
 import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/utils'
 import { saveLocalSession, getLocalSession } from '@/lib/local-sessions'
 import type { Participant } from '@/types'
@@ -172,9 +173,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-[#0bb673] flex items-center justify-center">
-              <span className="text-white text-xs font-black leading-none">$</span>
-            </div>
+            <LogoMark className="w-7 h-7" />
             <span className="text-xl font-black tracking-tight">A-Pagar</span>
           </div>
           <h1 className="font-display text-[1.7rem] font-semibold leading-tight">
@@ -246,9 +245,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         {/* Header */}
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-md bg-[#0bb673] flex items-center justify-center">
-              <span className="text-white text-[10px] font-black leading-none">$</span>
-            </div>
+            <LogoMark className="w-6 h-6" />
             <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
           </div>
           <h1 className="font-display text-2xl font-semibold">{session.restaurant_name ?? 'La cuenta'}</h1>
@@ -425,9 +422,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
       <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-md bg-[#0bb673] flex items-center justify-center">
-              <span className="text-white text-[10px] font-black leading-none">$</span>
-            </div>
+            <LogoMark className="w-6 h-6" />
             <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
           </div>
           <h1 className="font-display text-xl font-bold">Tu total a pagar</h1>

@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og'
+import { logoDataUri } from '@/lib/logo'
 
 export const alt = 'A-Pagar — Divide la cuenta sin caos'
 export const size = { width: 1200, height: 630 }
@@ -26,19 +27,9 @@ export default function OgImage() {
             gap: 24,
           }}
         >
-          <div
-            style={{
-              background: '#0bb673',
-              width: 96,
-              height: 96,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 24,
-            }}
-          >
-            <span style={{ color: '#fff', fontSize: 64, fontWeight: 900 }}>$</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img width={104} height={104} src={logoDataUri({ radius: 24 })} alt="" />
+
           <span style={{ color: '#1a1614', fontSize: 72, fontWeight: 900, letterSpacing: -2 }}>
             A-Pagar
           </span>

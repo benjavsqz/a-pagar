@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { MisBoletasCta } from '@/components/mis-boletas-cta'
 import { Camera, Share2, CircleCheck, ScanLine, Users, ArrowRight, Check, ReceiptText } from 'lucide-react'
+import { LogoMark } from '@/components/brand/logo-mark'
 
 export default function Home() {
   return (
@@ -17,9 +18,7 @@ export default function Home() {
         {/* Nav */}
         <nav className="flex items-center justify-between py-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-[11px] bg-gradient-to-br from-[#16d488] to-[#0bb673] flex items-center justify-center shadow-[0_6px_16px_rgba(11,182,115,0.4)]">
-              <span className="text-white text-sm font-black leading-none">$</span>
-            </div>
+            <LogoMark className="w-9 h-9" />
             <span className="text-[17px] font-extrabold tracking-tight">A-Pagar</span>
           </div>
           <Link

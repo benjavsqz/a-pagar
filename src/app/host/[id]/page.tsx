@@ -3,6 +3,7 @@ import { use, useEffect, useRef, useState } from 'react'
 import { useSession } from '@/hooks/use-session'
 import { usePresence } from '@/hooks/use-presence'
 import { PresenceBubbles } from '@/components/session/presence-bubbles'
+import { LogoMark } from '@/components/brand/logo-mark'
 import { usePush } from '@/hooks/use-push'
 import { ComprobanteLink } from '@/components/session/comprobante-link'
 import { ItemsClaimList } from '@/components/session/items-claim-list'
@@ -219,9 +220,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           >
             <ChevronLeft className="w-5 h-5" />
           </Link>
-          <div className="w-7 h-7 rounded-lg bg-[#0bb673] flex items-center justify-center">
-            <span className="text-white text-xs font-black leading-none">$</span>
-          </div>
+          <LogoMark className="w-7 h-7" />
           <span className="text-xl font-black tracking-tight text-[#077f4e]">A-Pagar</span>
           <span className={`text-xs px-2 py-0.5 rounded-full border ml-1 ${
             session.status === 'open'
