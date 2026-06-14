@@ -39,7 +39,7 @@ export default async function SessionOg({ params }: { params: Promise<{ id: stri
       <div
         style={{
           width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', background: '#fbf3ea', padding: 80, gap: 28,
+          alignItems: 'center', justifyContent: 'center', background: '#faf2e7', padding: 80, gap: 28,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>

@@ -12,36 +12,45 @@ export function useSession(sessionId: string) {
   // Canal de Broadcast: postgres_changes no entrega eventos en este proyecto,
   // así que sincronizamos con un mensaje "sync" que emite quien escribe.
   const channelRef = useRef<RealtimeChannel | null>(null)
+  // Guard de concurrencia: varias fuentes disparan load() (poll, focus, broadcast,
+  // RPCs). Sin esto, una respuesta lenta y vieja puede pisar a una nueva.
+  const loadSeq = useRef(0)
+  // Firma del último data aplicado, para no re-renderizar si nada cambió (el poll
+  // recarga aunque no haya novedades).
+  const lastSig = useRef<string>('')
 
   const load = useCallback(async () => {
     const supabase = createClient()
+    const seq = ++loadSeq.current
 
-    const itemsForClaims = await supabase
-      .from('items')
-      .select('id')
-      .eq('session_id', sessionId)
-
-    const itemIds = itemsForClaims.data?.map(i => i.id) ?? []
-
+    // claims.session_id existe desde la 005 → una sola tanda de 5 queries en
+    // paralelo, sin la query previa de itemIds (N+1 eliminado).
     const [sessionRes, itemsRes, participantsRes, claimsRes, paymentsRes] = await Promise.all([
       supabase.from('sessions').select('*').eq('id', sessionId).single(),
       supabase.from('items').select('*').eq('session_id', sessionId).order('position'),
       supabase.from('participants').select('*').eq('session_id', sessionId).order('created_at'),
-      itemIds.length > 0
-        ? supabase.from('claims').select('*').in('item_id', itemIds)
-        : Promise.resolve({ data: [] as Claim[], error: null }),
+      supabase.from('claims').select('*').eq('session_id', sessionId),
       supabase.from('payments').select('*').eq('session_id', sessionId),
     ])
 
+    // Descartar si llegó una carga más nueva mientras esperábamos la red.
+    if (seq !== loadSeq.current) return
     if (sessionRes.error) { setError('Sesión no encontrada'); setLoading(false); return }
 
-    setData({
+    const next: SessionWithData = {
       session: sessionRes.data as Session,
       items: (itemsRes.data ?? []) as Item[],
       participants: (participantsRes.data ?? []) as Participant[],
       claims: (claimsRes.data ?? []) as Claim[],
       payments: (paymentsRes.data ?? []) as Payment[],
-    })
+    }
+
+    // Diff: si el snapshot es idéntico al anterior, no tocar el estado (evita
+    // re-render de toda la lista cada vez que el poll trae lo mismo).
+    const sig = JSON.stringify(next)
+    if (sig === lastSig.current) { setLoading(false); return }
+    lastSig.current = sig
+    setData(next)
     setLoading(false)
   }, [sessionId])
 
@@ -53,23 +62,31 @@ export function useSession(sessionId: string) {
     const supabase = createClient()
 
     // Broadcast (no postgres_changes): cada cliente que cambia algo emite "sync"
-    // y los demás recargan. self:false → quien emite no se recarga a sí mismo
-    // (ya hizo su update optimista).
+    // y los demás recargan. self:false → quien emite no se recarga a sí mismo.
+    // Debounce: si llegan varios "sync" seguidos (mesa activa), coalescemos en
+    // una sola recarga para no martillar la DB.
+    let syncTimer: ReturnType<typeof setTimeout> | null = null
+    const debouncedLoad = () => {
+      if (syncTimer) return
+      syncTimer = setTimeout(() => { syncTimer = null; load() }, 600)
+    }
     const channel = supabase.channel(`rt:${sessionId}`, { config: { broadcast: { self: false } } })
-    channel.on('broadcast', { event: 'sync' }, () => load()).subscribe()
+    channel.on('broadcast', { event: 'sync' }, debouncedLoad).subscribe()
     channelRef.current = channel
 
     // Red de seguridad: el broadcast es "fire-and-forget" y se pierde si el
     // websocket se suspende (pestaña en segundo plano / pantalla apagada en
-    // móvil) o la red falla. Garantizamos consistencia eventual refrescando al
-    // volver a la pestaña y con un poll suave mientras está visible.
+    // móvil) o la red falla. Refrescamos al volver a la pestaña y con un poll
+    // lento (el broadcast cubre la inmediatez; esto es solo respaldo). El diff
+    // en load() evita re-render si no cambió nada.
     const refresh = () => { if (document.visibilityState === 'visible') load() }
     document.addEventListener('visibilitychange', refresh)
     window.addEventListener('focus', refresh)
-    const poll = setInterval(refresh, 4000)
+    const poll = setInterval(refresh, 15000)
 
     return () => {
       channelRef.current = null
+      if (syncTimer) clearTimeout(syncTimer)
       supabase.removeChannel(channel)
       document.removeEventListener('visibilitychange', refresh)
       window.removeEventListener('focus', refresh)
@@ -77,15 +94,18 @@ export function useSession(sessionId: string) {
     }
   }, [sessionId, load])
 
-  // Avisa a los demás clientes que hubo un cambio en la boleta.
+  // Avisa a los demás clientes que hubo un cambio. Solo si el canal ya está
+  // conectado (si no, el send se descarta en silencio; el poll de respaldo cubre).
   const notifyChange = useCallback(() => {
-    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    const ch = channelRef.current
+    if (ch && ch.state === 'joined') ch.send({ type: 'broadcast', event: 'sync', payload: {} })
   }, [])
 
   // Optimistic add: update local state immediately, then persist
   const addClaim = useCallback(async (itemId: string, participantId: string) => {
     const optimistic: Claim = {
       id: `opt-${itemId}-${participantId}`,
+      session_id: sessionId,
       item_id: itemId,
       participant_id: participantId,
       created_at: new Date().toISOString(),
@@ -108,7 +128,7 @@ export function useSession(sessionId: string) {
     } else {
       notifyChange()
     }
-  }, [notifyChange])
+  }, [notifyChange, sessionId])
 
   // Optimistic remove: update local state immediately, then persist
   const removeClaim = useCallback(async (itemId: string, participantId: string) => {

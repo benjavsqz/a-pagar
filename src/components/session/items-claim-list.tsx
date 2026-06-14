@@ -10,7 +10,8 @@ function ClaimerAvatars({ people, divide }: { people: Participant[]; divide?: nu
   if (people.length === 0) return null
   return (
     <div className="flex items-center gap-1.5 mt-1">
-      <div className="flex -space-x-1.5">
+      <span className="sr-only">Marcado por {people.map(p => p.name).join(', ')}</span>
+      <div className="flex -space-x-1.5" aria-hidden="true">
         {people.map(p => (
           <span
             key={p.id}
@@ -210,6 +211,9 @@ export function ItemsClaimList({
               <button
                 onClick={toggleMine}
                 disabled={!open}
+                role="checkbox"
+                aria-checked={isMine}
+                aria-label={`${item.name}, ${formatCLP(pricePer)}${isMine ? ' — marcado por ti' : ''}`}
                 className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-95 transition-transform disabled:active:scale-100"
               >
                 {isMine

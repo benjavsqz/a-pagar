@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { X, Download, Share } from 'lucide-react'
+import { LogoMark } from '@/components/brand/logo-mark'
 
 type Platform = 'android' | 'ios' | null
 
@@ -79,9 +80,7 @@ export function PwaInstallBanner() {
       <div className="max-w-md mx-auto mb-4 bg-[#ffffff] border border-[#e0d4c4] rounded-2xl p-4 shadow-[0_-4px_32px_rgba(0,0,0,0.5)]">
         <div className="flex items-start gap-3">
           {/* App icon */}
-          <div className="w-12 h-12 rounded-xl bg-[#0bb673] flex items-center justify-center shrink-0">
-            <span className="text-[#1a1614] text-xl font-black leading-none">$</span>
-          </div>
+          <LogoMark className="w-12 h-12 shrink-0" radius={104} />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">

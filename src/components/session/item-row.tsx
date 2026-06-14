@@ -37,7 +37,7 @@ export function ItemRow({
             onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
             disabled={quantity <= 1}
             aria-label="Disminuir cantidad"
-            className="w-8 h-8 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-25 transition-colors"
+            className="w-10 h-10 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-25 transition-colors"
           >
             <Minus className="w-3 h-3" />
           </button>
@@ -47,7 +47,7 @@ export function ItemRow({
           <button
             onClick={() => onQuantityChange(quantity + 1)}
             aria-label="Aumentar cantidad"
-            className="w-8 h-8 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] transition-colors"
+            className="w-10 h-10 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] transition-colors"
           >
             <Plus className="w-3 h-3" />
           </button>
@@ -71,12 +71,12 @@ export function ItemRow({
           <button
             onClick={onRemove}
             aria-label="Eliminar ítem"
-            className="p-1.5 hover:bg-[#f6f1ea] rounded-lg text-[#8a7d71] hover:text-[#e5484d] transition-colors shrink-0"
+            className="w-10 h-10 flex items-center justify-center hover:bg-[#f6f1ea] rounded-lg text-[#6b5f55] hover:text-[#c0282d] transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         ) : (
-          <div className="w-7 shrink-0" />
+          <div className="w-10 shrink-0" />
         )}
       </div>
     </div>

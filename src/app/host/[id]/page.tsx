@@ -137,6 +137,8 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
   }
 
+  // El diff en useSession.load() ya evita re-render salvo cambios reales, así que
+  // estos cálculos no corren en cada tick del poll (solo cuando algo cambió).
   const summaries = guests.map(p =>
     computeParticipantSummary(p, items, claims, payments, session.propina_pct)
   )
@@ -197,6 +199,12 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   const progressPct = targetToCollect > 0
     ? Math.min(100, Math.round((confirmedAmount / targetToCollect) * 100))
     : 0
+
+  // Ítems que nadie marcó (modo por ítems): plata que NO entra en el target y que
+  // el host terminaría poniendo de su bolsillo si no se reparte. Excluye lo que
+  // el propio host marcó como suyo (eso no es "sin asignar", es su consumo).
+  const unclaimedItems = isEqual ? [] : items.filter(i => !claims.some(c => c.item_id === i.id))
+  const unclaimedTotal = unclaimedItems.reduce((sum, i) => sum + i.price, 0)
 
   const pendingCount = guests.length - confirmedCount
 
@@ -293,6 +301,23 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           {progressPct}% recaudado · {confirmedCount} confirmado{confirmedCount !== 1 ? 's' : ''}
         </p>
       </Card>
+
+      {/* Aviso: ítems que nadie marcó → plata que el host pondría de su bolsillo */}
+      {unclaimedTotal > 0 && (
+        <div className="rounded-2xl border border-[var(--coral)]/35 bg-[var(--coral-soft)] p-4">
+          <div className="flex items-start gap-3">
+            <Bell className="w-5 h-5 text-[var(--coral-ink)] shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[var(--coral-ink)]">
+                {formatCLP(unclaimedTotal)} sin asignar
+              </p>
+              <p className="text-xs text-[#6b5f55] mt-0.5 leading-snug">
+                {unclaimedItems.length} ítem{unclaimedItems.length !== 1 ? 's' : ''} que nadie marcó. Si nadie los toma, esa plata no se cobra y la pones tú. Recuérdaselo al grupo o márcalos en “Lo que consumí yo”.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Share link */}
       <Card className="p-4 space-y-3">

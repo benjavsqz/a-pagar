@@ -103,6 +103,14 @@ body::before {
 
 * { -webkit-tap-highlight-color: transparent; }
 
+/* Foco visible para teclado en TODOS los controles (WCAG 2.4.7).
+   Solo en navegación por teclado (no en click/touch), gracias a :focus-visible. */
+:focus-visible {
+  outline: 2.5px solid var(--brand-ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* Ocultar flechitas nativas del input de precio (number) */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -122,7 +130,7 @@ input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--text-2); /* AA: text-3 no pasa contraste en texto chico */
 }
 
 /* Divisor perforado (línea de corte de boleta) */

@@ -37,6 +37,7 @@ export interface Participant {
 
 export interface Claim {
   id: string
+  session_id: string // denormalizado (migración 005), permite filtrar sin pasar por items
   item_id: string
   participant_id: string
   created_at: string

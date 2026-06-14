@@ -45,7 +45,7 @@ export function HostDataForm({
     <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-8">
       <p className="text-sm text-[#6b5f55] leading-relaxed">
         {hint ?? 'Tus datos de transferencia aparecerán para que los demás sepan a dónde pagarte.'}
-        {' '}<span className="text-[#8a7d71]">Los campos con * son obligatorios.</span>
+        {' '}<span className="text-[#6b5f55] font-medium">Los campos con * son obligatorios.</span>
       </p>
 
       <Input
@@ -106,7 +106,7 @@ export function HostDataForm({
           onChange={e => setHostPaymentLink(e.target.value)}
           inputMode="url"
         />
-        <p className="text-xs text-[#9a8d82] mt-1.5 px-0.5">
+        <p className="text-xs text-[#6b5f55] mt-1.5 px-0.5">
           Si lo pegas, los demás verán un botón “Pagar ahora” que lo abre directo. Igual mostramos tus datos para transferir desde cualquier banco.
         </p>
       </div>

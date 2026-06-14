@@ -10,7 +10,7 @@ const item = (id: string, price: number): Item => ({
   id, session_id: 's1', name: id, price, position: 0,
 })
 const claim = (itemId: string, participantId: string): Claim => ({
-  id: `${itemId}-${participantId}`, item_id: itemId, participant_id: participantId,
+  id: `${itemId}-${participantId}`, session_id: 's1', item_id: itemId, participant_id: participantId,
   created_at: '2026-01-01',
 })
 const person = (id: string): Participant => ({

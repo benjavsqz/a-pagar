@@ -174,6 +174,10 @@ export default function CrearPage() {
       toast('El link de pago debe ser de un servicio conocido (Mercado Pago, MACH, Fintoc…)', 'error')
       return
     }
+    if (!((hostBank.trim() && hostAccount.trim()) || paymentLink)) {
+      toast('Agrega cómo te transfieren: banco + número de cuenta, o un link de pago', 'error')
+      return
+    }
 
     setLoading(true)
     try {
@@ -264,6 +268,10 @@ export default function CrearPage() {
     const paymentLink = normalizePaymentLink(hostPaymentLink)
     if (hostPaymentLink.trim() && !paymentLink) {
       toast('El link de pago debe ser de un servicio conocido (Mercado Pago, MACH, Fintoc…)', 'error')
+      return
+    }
+    if (!((hostBank.trim() && hostAccount.trim()) || paymentLink)) {
+      toast('Agrega cómo te transfieren: banco + número de cuenta, o un link de pago', 'error')
       return
     }
 

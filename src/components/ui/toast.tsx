@@ -31,12 +31,16 @@ export function Toaster() {
   if (!current) return null
 
   return (
-    <div role="status" aria-live="polite" className={cn(
-      'fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl z-50 transition-all',
-      current.type === 'success' && 'bg-[#0bb673] text-white',
-      current.type === 'error' && 'bg-[#e5484d] text-[#1a1614]',
-      current.type === 'info' && 'bg-[#ece2d5] text-[#1a1614]',
-    )}>
+    <div
+      role={current.type === 'error' ? 'alert' : 'status'}
+      aria-live={current.type === 'error' ? 'assertive' : 'polite'}
+      className={cn(
+        'fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl z-50 transition-all',
+        current.type === 'success' && 'bg-[#0a6f47] text-white',
+        current.type === 'error' && 'bg-[#c0282d] text-white',
+        current.type === 'info' && 'bg-[#3a322c] text-white',
+      )}
+    >
       {current.message}
     </div>
   )

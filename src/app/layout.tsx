@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Fraunces, Space_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/toast'
 import { PwaInstallBanner } from '@/components/pwa-install-banner'
+import { RegisterSW } from '@/components/register-sw'
 import { StructuredData } from '@/components/structured-data'
 import './globals.css'
 
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#fbf3ea',
+  themeColor: '#faf2e7',
   width: 'device-width',
   initialScale: 1,
 }
@@ -69,11 +70,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-CL" className={`h-full ${jakarta.variable} ${fraunces.variable} ${spaceMono.variable}`}>
-      <body className="min-h-full flex flex-col bg-[#fbf3ea] text-[#1a1614] antialiased font-sans">
+      <body className="min-h-full flex flex-col bg-[#faf2e7] text-[#1a1614] antialiased font-sans">
         <StructuredData />
         {children}
         <Toaster />
         <PwaInstallBanner />
+        <RegisterSW />
         <Analytics />
       </body>
     </html>

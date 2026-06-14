@@ -15,10 +15,11 @@ interface Me {
   role: 'host' | 'participant'
 }
 
-// Paleta de avatares — colores legibles con texto blanco, estables por nombre.
+// Paleta de avatares — todos pasan contraste AA (≥4.5:1) con texto blanco,
+// estables por nombre. (Antes la mayoría fallaba AA; audits/08.)
 const AVATAR_COLORS = [
-  '#0bb673', '#ff6a45', '#7c6cf0', '#0ea5e9', '#e0a106',
-  '#e5484d', '#14b8a6', '#d6409f', '#8b5cf6', '#0a6f47',
+  '#0a6f47', '#c2410c', '#6d28d9', '#0369a1', '#b45309',
+  '#be123c', '#0f766e', '#be185d', '#4338ca', '#15803d',
 ]
 export function colorForName(name: string): string {
   let h = 0
