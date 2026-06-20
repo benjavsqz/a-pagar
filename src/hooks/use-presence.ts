@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 
 export interface PresenceUser {
@@ -43,12 +44,19 @@ export function usePresence(sessionId: string, me: Me | null): PresenceUser[] {
   useEffect(() => {
     if (!meKey || !myName || !myRole) return
     const supabase = createClient()
-    const channel = supabase.channel(`presence:${sessionId}`, {
-      config: { presence: { key: meKey } },
-    })
 
-    const sync = () => {
-      const state = channel.presenceState<{ name: string; role: 'host' | 'participant' }>()
+    // Mismo problema de resiliencia que use-session: el websocket cae en móviles
+    // y el callback original solo manejaba SUBSCRIBED, dejando la presencia
+    // "congelada" tras una caída. Reconectamos con backoff acotado y re-trackeamos
+    // al reconectar para volver a aparecer en la lista de los demás.
+    let disposed = false
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+    let attempt = 0
+    const MAX_BACKOFF = 30000
+    let channel: RealtimeChannel | null = null
+
+    const sync = (ch: RealtimeChannel) => {
+      const state = ch.presenceState<{ name: string; role: 'host' | 'participant' }>()
       const seen = new Set<string>()
       const list: PresenceUser[] = []
       for (const metas of Object.values(state)) {
@@ -64,13 +72,38 @@ export function usePresence(sessionId: string, me: Me | null): PresenceUser[] {
       setPeople(list)
     }
 
-    channel
-      .on('presence', { event: 'sync' }, sync)
-      .subscribe(status => {
-        if (status === 'SUBSCRIBED') channel.track({ name: myName, role: myRole })
+    const subscribe = () => {
+      if (disposed) return
+      if (channel) supabase.removeChannel(channel)
+      const ch = supabase.channel(`presence:${sessionId}`, {
+        config: { presence: { key: meKey } },
       })
+      channel = ch
+      ch
+        .on('presence', { event: 'sync' }, () => sync(ch))
+        .subscribe(status => {
+          if (disposed) return
+          if (status === 'SUBSCRIBED') {
+            attempt = 0
+            ch.track({ name: myName, role: myRole })
+            return
+          }
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            if (retryTimer) return
+            const base = Math.min(1000 * 2 ** attempt, MAX_BACKOFF)
+            const delay = base / 2 + Math.random() * (base / 2)
+            attempt++
+            retryTimer = setTimeout(() => { retryTimer = null; subscribe() }, delay)
+          }
+        })
+    }
+    subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      disposed = true
+      if (retryTimer) clearTimeout(retryTimer)
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [sessionId, meKey, myName, myRole])
 
   return people
