@@ -65,13 +65,16 @@ describe('normalizePaymentLink', () => {
 })
 
 describe('computeItemWithClaims', () => {
-  it('divide el precio entre los reclamantes (ceil)', () => {
+  it('reparte el precio conservando el total (sin plata fantasma)', () => {
     const it1 = item('a', 1000)
     const claims = [claim('a', 'p1'), claim('a', 'p2'), claim('a', 'p3')]
-    expect(computeItemWithClaims(it1, claims).price_per_person).toBe(334)
+    const ps = [person('p1'), person('p2'), person('p3')]
+    const shares = ps.map(p => computeItemWithClaims(it1, claims, ps, p.id).price_per_person)
+    expect(shares).toEqual([334, 333, 333]) // resto repartido de a $1
+    expect(shares.reduce((a, b) => a + b, 0)).toBe(1000) // Σ == precio
   })
   it('sin reclamantes, el precio completo (÷1)', () => {
-    expect(computeItemWithClaims(item('a', 1000), []).price_per_person).toBe(1000)
+    expect(computeItemWithClaims(item('a', 1000), [], [], 'x').price_per_person).toBe(1000)
   })
 })
 
@@ -79,7 +82,7 @@ describe('computeParticipantSummary', () => {
   it('suma solo lo reclamado y aplica propina', () => {
     const items = [item('a', 1000), item('b', 2000)]
     const claims = [claim('a', 'p1'), claim('b', 'p1')]
-    const s = computeParticipantSummary(person('p1'), items, claims, [], 10)
+    const s = computeParticipantSummary(person('p1'), items, claims, [], 10, [person('p1')])
     expect(s.subtotal).toBe(3000)
     expect(s.propina).toBe(300)
     expect(s.total).toBe(3300)
@@ -87,7 +90,8 @@ describe('computeParticipantSummary', () => {
   it('reparte un ítem compartido y enlaza el pago', () => {
     const items = [item('a', 1000)]
     const claims = [claim('a', 'p1'), claim('a', 'p2')]
-    const s = computeParticipantSummary(person('p1'), items, claims, [payment('p1', 500)], 0)
+    const ps = [person('p1'), person('p2')]
+    const s = computeParticipantSummary(person('p1'), items, claims, [payment('p1', 500)], 0, ps)
     expect(s.subtotal).toBe(500)
     expect(s.total).toBe(500)
     expect(s.payment?.amount).toBe(500)

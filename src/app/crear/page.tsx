@@ -342,7 +342,7 @@ export default function CrearPage() {
     return (
       <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-8">
-          <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]">
+          <Link href="/" aria-label="Volver al inicio" className="p-2 -ml-2 hover:bg-[var(--fill)] rounded-xl transition-colors text-[var(--text-2)] hover:text-[var(--text)]">
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
@@ -354,27 +354,27 @@ export default function CrearPage() {
         <div className="flex-1 flex flex-col justify-center gap-5">
           <div>
             <h1 className="font-display text-2xl font-black">¿Cómo quieres dividir?</h1>
-            <p className="text-sm text-[#6b5f55] mt-1">Elige el método que mejor se ajusta a tu situación</p>
+            <p className="text-sm text-[var(--text-2)] mt-1">Elige el método que mejor se ajusta a tu situación</p>
           </div>
 
           <button
             onClick={() => setSplitMode('items')}
-            className="w-full text-left p-5 bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl hover:border-[#0bb673]/40 lift group"
+            className="w-full text-left p-5 bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl hover:border-[#0bb673]/40 lift group"
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-[#0bb673]/10 border border-[#0bb673]/20 flex items-center justify-center shrink-0 group-hover:bg-[#0bb673]/15 transition-colors">
-                <ScanLine className="w-6 h-6 text-[#077f4e]" />
+                <ScanLine className="w-6 h-6 text-[var(--brand-ink)]" />
               </div>
               <div className="flex-1">
                 <p className="font-bold text-base">Por ítems</p>
-                <p className="text-sm text-[#6b5f55] mt-1 leading-relaxed">
+                <p className="text-sm text-[var(--text-2)] mt-1 leading-relaxed">
                   Escanea la boleta y cada uno marca exactamente lo que pidió. Ideal cuando hubo pedidos distintos.
                 </p>
               </div>
             </div>
             <div className="flex gap-1.5 flex-wrap mt-4">
               {['Escaneo IA', 'Preciso', 'Con propina'].map(tag => (
-                <span key={tag} className="text-[10px] bg-[#0bb673]/8 text-[#077f4e] border border-[#0bb673]/15 px-2 py-0.5 rounded-full">
+                <span key={tag} className="text-[10px] bg-[#0bb673]/8 text-[var(--brand-ink)] border border-[#0bb673]/15 px-2 py-0.5 rounded-full">
                   {tag}
                 </span>
               ))}
@@ -383,7 +383,7 @@ export default function CrearPage() {
 
           <button
             onClick={() => setSplitMode('equal')}
-            className="w-full text-left p-5 bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl hover:border-[#7c6cf0]/40 lift group"
+            className="w-full text-left p-5 bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl hover:border-[#7c6cf0]/40 lift group"
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-[#7c6cf0]/10 border border-[#7c6cf0]/20 flex items-center justify-center shrink-0 group-hover:bg-[#7c6cf0]/15 transition-colors">
@@ -391,14 +391,14 @@ export default function CrearPage() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-base">Partes iguales</p>
-                <p className="text-sm text-[#6b5f55] mt-1 leading-relaxed">
+                <p className="text-sm text-[var(--text-2)] mt-1 leading-relaxed">
                   Divide el total en partes iguales entre todos. Ideal cuando cada uno pidió más o menos lo mismo.
                 </p>
               </div>
             </div>
             <div className="flex gap-1.5 flex-wrap mt-4">
               {['Rápido', 'Sin ítems', 'Simple'].map(tag => (
-                <span key={tag} className="text-[10px] bg-[#7c6cf0]/8 text-[#5b4dc7] border border-[#7c6cf0]/15 px-2 py-0.5 rounded-full">
+                <span key={tag} className="text-[10px] bg-[#7c6cf0]/8 text-[var(--violet-ink)] border border-[#7c6cf0]/15 px-2 py-0.5 rounded-full">
                   {tag}
                 </span>
               ))}
@@ -418,7 +418,7 @@ export default function CrearPage() {
           <button
             onClick={goBackItems}
             aria-label="Volver"
-            className="p-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]"
+            className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors text-[var(--text-2)] hover:text-[var(--text)]"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -439,9 +439,9 @@ export default function CrearPage() {
               onManual={() => setStepItems('items')}
             />
             <div className="relative flex items-center gap-3">
-              <div className="flex-1 h-px bg-[#f1e9dd]" />
-              <span className="text-xs text-[#6b5f55]">o ingresa manual</span>
-              <div className="flex-1 h-px bg-[#f1e9dd]" />
+              <div className="flex-1 h-px bg-[var(--fill-2)]" />
+              <span className="text-xs text-[var(--text-2)]">o ingresa manual</span>
+              <div className="flex-1 h-px bg-[var(--fill-2)]" />
             </div>
             <Button variant="secondary" fullWidth onClick={() => setStepItems('items')}>
               Ingresar ítems a mano
@@ -452,17 +452,17 @@ export default function CrearPage() {
         {stepItems === 'items' && (
           <div className="flex-1 flex flex-col gap-4">
             {receiptPreviewUrl && (
-              <div className="rounded-2xl overflow-hidden border border-[#ece2d5] bg-[#ffffff]">
+              <div className="rounded-2xl overflow-hidden border border-[var(--line)] bg-[var(--surface)]">
                 <button
                   onClick={() => setShowReceipt(v => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-[#6b5f55] hover:text-[#1a1614] transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-[var(--text-2)] hover:text-[var(--text)] transition-colors"
                 >
                   <span>Tu boleta escaneada</span>
                   {showReceipt ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
                 {showReceipt && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={receiptPreviewUrl} alt="Boleta" className="w-full max-h-52 object-contain border-t border-[#ece2d5]" />
+                  <img src={receiptPreviewUrl} alt="Boleta" className="w-full max-h-52 object-contain border-t border-[var(--line)]" />
                 )}
               </div>
             )}
@@ -476,8 +476,8 @@ export default function CrearPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-[#6b5f55] uppercase tracking-wider">Ítems de la boleta</span>
-                <button onClick={addItem} className="flex items-center gap-1 text-xs text-[#077f4e] hover:text-[#0a8f5c] transition-colors">
+                <span className="text-xs font-medium text-[var(--text-2)] uppercase tracking-wider">Ítems de la boleta</span>
+                <button onClick={addItem} className="flex items-center gap-1 text-xs text-[var(--brand-ink)] hover:text-[#0a8f5c] transition-colors">
                   <Plus className="w-3.5 h-3.5" /> Agregar
                 </button>
               </div>
@@ -496,23 +496,23 @@ export default function CrearPage() {
             </div>
 
             {/* Propina */}
-            <div className="bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4">
+            <div className="bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold">Propina</p>
-                  <p className="text-xs text-[#6b5f55] mt-0.5">
+                  <p className="text-xs text-[var(--text-2)] mt-0.5">
                     {propina === 0 ? 'No se agregará propina' : 'Proporcional al consumo de cada uno'}
                   </p>
                 </div>
-                <div className="flex gap-1.5 bg-[#f6f1ea] border border-[#ece2d5] rounded-full p-1">
+                <div className="flex gap-1.5 bg-[var(--fill)] border border-[var(--line)] rounded-full p-1">
                   {([0, 10] as const).map(pct => (
                     <button
                       key={pct}
                       onClick={() => setPropina(pct)}
-                      className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                      className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-[transform,background-color,border-color,color] ${
                         propina === pct
                           ? 'bg-[#0bb673] text-white shadow-[0_0_12px_rgba(11,182,115,0.3)]'
-                          : 'text-[#6b5f55] hover:text-[#1a1614]'
+                          : 'text-[var(--text-2)] hover:text-[var(--text)]'
                       }`}
                     >
                       {pct === 0 ? 'Sin' : `${pct}%`}
@@ -523,9 +523,9 @@ export default function CrearPage() {
             </div>
 
             {/* Totals */}
-            <div className="bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 space-y-2">
+            <div className="bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 space-y-2">
               {ocrSubtotal && Math.abs(subtotal - ocrSubtotal) > ocrSubtotal * 0.02 && (
-                <div className="flex flex-col gap-2 pb-3 border-b border-[#ece2d5]">
+                <div className="flex flex-col gap-2 pb-3 border-b border-[var(--line)]">
                   <div className="flex items-start gap-2 text-xs text-[#92600a]">
                     <span>⚠</span>
                     <span>La boleta marcaba {formatCLP(ocrSubtotal)} y la suma de ítems da {formatCLP(subtotal)} — puede faltar alguno.</span>
@@ -534,7 +534,7 @@ export default function CrearPage() {
                     <button
                       onClick={reanalyze}
                       disabled={reanalyzing}
-                      className="self-start flex items-center gap-1.5 text-xs font-semibold text-[#077f4e] bg-[#e7f9f0] hover:bg-[#d6f3e6] disabled:opacity-60 px-3 py-1.5 rounded-full transition-colors tap"
+                      className="self-start flex items-center gap-1.5 text-xs font-semibold text-[var(--brand-ink)] bg-[var(--brand-bg)] hover:bg-[#d6f3e6] disabled:opacity-60 px-3 py-1.5 rounded-full transition-colors tap"
                     >
                       {reanalyzing
                         ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Re-analizando…</>
@@ -545,25 +545,25 @@ export default function CrearPage() {
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-[#6b5f55]">Subtotal boleta</span>
+                <span className="text-[var(--text-2)]">Subtotal boleta</span>
                 <span className="font-medium">{formatCLP(subtotal)}</span>
               </div>
               {propina > 0 && (
                 <>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#6b5f55]">Propina {propina}%</span>
-                    <span className="font-medium text-[#4a423b]">{formatCLP(Math.ceil(subtotal * propina / 100))}</span>
+                    <span className="text-[var(--text-2)]">Propina {propina}%</span>
+                    <span className="font-medium text-[var(--text-1)]">{formatCLP(Math.ceil(subtotal * propina / 100))}</span>
                   </div>
-                  <div className="flex justify-between text-sm pt-1 border-t border-[#ece2d5]">
+                  <div className="flex justify-between text-sm pt-1 border-t border-[var(--line)]">
                     <span className="font-semibold">Total con propina</span>
-                    <span className="font-bold text-[#077f4e]">{formatCLP(subtotal + Math.ceil(subtotal * propina / 100))}</span>
+                    <span className="font-bold text-[var(--brand-ink)]">{formatCLP(subtotal + Math.ceil(subtotal * propina / 100))}</span>
                   </div>
                 </>
               )}
               {propina === 0 && (
-                <div className="flex justify-between text-sm pt-1 border-t border-[#ece2d5]">
+                <div className="flex justify-between text-sm pt-1 border-t border-[var(--line)]">
                   <span className="font-semibold">Total</span>
-                  <span className="font-bold text-[#077f4e]">{formatCLP(subtotal)}</span>
+                  <span className="font-bold text-[var(--brand-ink)]">{formatCLP(subtotal)}</span>
                 </div>
               )}
             </div>
@@ -604,7 +604,7 @@ export default function CrearPage() {
         <button
           onClick={goBackEqual}
           aria-label="Volver"
-          className="p-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]"
+          className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors text-[var(--text-2)] hover:text-[var(--text)]"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -618,12 +618,12 @@ export default function CrearPage() {
 
       {stepEqual === 'amount' && (
         <div className="flex-1 flex flex-col gap-4">
-          <div className="bg-[#ffffff] border border-[#7c6cf0]/20 rounded-2xl p-4">
+          <div className="bg-[var(--surface)] border border-[#7c6cf0]/20 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <Users className="w-4 h-4 text-[#7c6cf0]" />
               <p className="text-sm font-semibold text-[#7c6cf0]">División en partes iguales</p>
             </div>
-            <p className="text-xs text-[#6b5f55] leading-relaxed">
+            <p className="text-xs text-[var(--text-2)] leading-relaxed">
               Ingresa el total de la boleta (incluyendo propina) y cuántas personas son. Cada uno paga exactamente lo mismo.
             </p>
           </div>
@@ -635,33 +635,33 @@ export default function CrearPage() {
             onChange={e => setEqualRestaurant(e.target.value)}
           />
 
-          <div className="bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 space-y-4">
+          <div className="bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#6b5f55] mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-[var(--text-2)] mb-2 uppercase tracking-wider">
                 Total de la boleta (con propina)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6b5f55] text-sm font-bold">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-2)] text-sm font-bold">$</span>
                 <input
                   type="number"
                   inputMode="numeric"
                   placeholder="0"
                   value={equalTotal}
                   onChange={e => setEqualTotal(e.target.value)}
-                  className="w-full bg-[#f6f1ea] border border-[#e0d4c4] rounded-xl pl-8 pr-4 py-3 text-lg font-bold text-[#1a1614] placeholder-[#9a8d82] focus:outline-none focus:border-[#0bb673]/50 transition-colors"
+                  className="w-full bg-[var(--fill)] border border-[var(--line-2)] rounded-xl pl-8 pr-4 py-3 text-lg font-bold text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[#0bb673]/50 transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#6b5f55] mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-[var(--text-2)] mb-2 uppercase tracking-wider">
                 ¿Cuántas personas? (incluido tú)
               </label>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setEqualN(n => String(Math.max(2, parseInt(n) - 1 || 2)))}
                   aria-label="Una persona menos"
-                  className="w-11 h-11 rounded-xl bg-[#f6f1ea] border border-[#e0d4c4] flex items-center justify-center text-xl font-bold text-[#6b5f55] hover:text-[#1a1614] hover:border-[#c9b8a4] active:scale-95 transition-all"
+                  className="w-11 h-11 rounded-xl bg-[var(--fill)] border border-[var(--line-2)] flex items-center justify-center text-xl font-bold text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--line-2)] active:scale-95 transition-[transform,background-color,border-color,color]"
                 >
                   −
                 </button>
@@ -673,12 +673,12 @@ export default function CrearPage() {
                   value={equalN}
                   onChange={e => setEqualN(e.target.value)}
                   placeholder="2"
-                  className="flex-1 bg-[#f6f1ea] border border-[#e0d4c4] rounded-xl px-4 py-3 text-lg font-bold text-[#1a1614] text-center placeholder-[#9a8d82] focus:outline-none focus:border-[#0bb673]/50 transition-colors"
+                  className="flex-1 bg-[var(--fill)] border border-[var(--line-2)] rounded-xl px-4 py-3 text-lg font-bold text-[var(--text)] text-center placeholder-[var(--text-3)] focus:outline-none focus:border-[#0bb673]/50 transition-colors"
                 />
                 <button
                   onClick={() => setEqualN(n => String(Math.min(30, parseInt(n) + 1 || 3)))}
                   aria-label="Una persona más"
-                  className="w-11 h-11 rounded-xl bg-[#f6f1ea] border border-[#e0d4c4] flex items-center justify-center text-xl font-bold text-[#6b5f55] hover:text-[#1a1614] hover:border-[#c9b8a4] active:scale-95 transition-all"
+                  className="w-11 h-11 rounded-xl bg-[var(--fill)] border border-[var(--line-2)] flex items-center justify-center text-xl font-bold text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--line-2)] active:scale-95 transition-[transform,background-color,border-color,color]"
                 >
                   +
                 </button>
@@ -689,9 +689,9 @@ export default function CrearPage() {
           {/* Live preview */}
           {totalNum > 0 && nNum >= 2 && (
             <div className="bg-gradient-to-br from-[#7c6cf0]/15 to-[#7c6cf0]/5 border border-[#7c6cf0]/25 rounded-2xl p-4">
-              <p className="text-xs text-[#5b4dc7] mb-1">Cada persona paga</p>
-              <p className="money text-3xl font-black text-[#1a1614]" style={{ animation: 'pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(sharePerPerson)}</p>
-              <p className="text-xs text-[#6b5f55] mt-1">
+              <p className="text-xs text-[var(--violet-ink)] mb-1">Cada persona paga</p>
+              <p className="money text-3xl font-black text-[var(--text)]" style={{ animation: 'pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(sharePerPerson)}</p>
+              <p className="text-xs text-[var(--text-2)] mt-1">
                 {formatCLP(totalNum)} ÷ {nNum} personas
               </p>
             </div>

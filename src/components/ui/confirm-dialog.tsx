@@ -53,12 +53,12 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby={description ? 'confirm-desc' : undefined}
-        className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5 scale-in"
+        className="w-full max-w-sm bg-[var(--surface)] rounded-2xl shadow-xl p-5 scale-in"
         onClick={e => e.stopPropagation()}
       >
-        <h2 id="confirm-title" className="font-display text-lg font-bold text-[#1a1614]">{title}</h2>
+        <h2 id="confirm-title" className="font-display text-lg font-bold text-[var(--text)]">{title}</h2>
         {description && (
-          <p id="confirm-desc" className="text-sm text-[#6b5f55] mt-1.5">{description}</p>
+          <p id="confirm-desc" className="text-sm text-[var(--text-2)] mt-1.5">{description}</p>
         )}
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-5">
           <Button variant="secondary" onClick={onCancel} disabled={loading}>{cancelLabel}</Button>

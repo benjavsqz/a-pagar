@@ -81,10 +81,9 @@ describe('computeHostCollection — por ítems', () => {
     expect(r.target).toBe(0)
   })
 
-  it('división impar ÷3 con propina: target = suma de lo que paga cada invitado (no float global)', () => {
-    // $1000 ÷ 3 = 334 c/u (ceil) + 10% propina (34 c/u) = 368 c/u × 3 = 1104.
-    // El cálculo viejo en /cuenta daba 1100 (float), divergiendo de lo que el
-    // invitado realmente veía. Esto fija la fuente única.
+  it('división impar ÷3 con propina: target = suma de lo que paga cada invitado (conserva el ítem)', () => {
+    // $1000 ÷ 3 conserva: 334 + 333 + 333 = 1000 (sin plata fantasma en el ítem).
+    // Con 10% por persona: 34 + 34 + 34 → totales 368 + 367 + 367 = 1102.
     const r = computeHostCollection({
       splitMode: 'items', propinaPct: 10,
       items: [item('i1', 1000)],
@@ -92,7 +91,32 @@ describe('computeHostCollection — por ítems', () => {
       participants: [person('a'), person('b'), person('c')],
       payments: [],
     })
-    expect(r.target).toBe(1104)
+    expect(r.target).toBe(1102)
+  })
+
+  it('CONSERVA: ítem impar solo entre invitados → Σ partes == precio (sin propina)', () => {
+    // Antes daba 1002 (ceil×3) = $2 de plata fantasma. Ahora reparte el resto.
+    const r = computeHostCollection({
+      splitMode: 'items', propinaPct: 0,
+      items: [item('i1', 1000)],
+      claims: [claim('i1', 'a'), claim('i1', 'b'), claim('i1', 'c')],
+      participants: [person('a'), person('b'), person('c')],
+      payments: [],
+    })
+    expect(r.target).toBe(1000)
+  })
+
+  it('host comparte ítem impar: invitados pagan ceil, el host absorbe el resto', () => {
+    // $1000 entre host + a + b: a y b pagan ceil(1000/3)=334 c/u; el host (no se
+    // cobra) absorbe 1000 − 668 = 332. El host nunca sobre-cobra.
+    const r = computeHostCollection({
+      splitMode: 'items', propinaPct: 0,
+      items: [item('i1', 1000)],
+      claims: [claim('i1', 'host'), claim('i1', 'a'), claim('i1', 'b')],
+      participants: [person('host', true), person('a'), person('b')],
+      payments: [],
+    })
+    expect(r.target).toBe(668)
   })
 
   it('ítems multi-unidad: cada invitado toma una unidad', () => {

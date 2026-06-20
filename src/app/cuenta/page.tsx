@@ -136,7 +136,7 @@ export default function CuentaPage() {
         <button
           onClick={() => router.push('/')}
           aria-label="Volver al inicio"
-          className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]"
+          className="p-2 -ml-2 hover:bg-[var(--fill)] rounded-xl transition-colors text-[var(--text-2)] hover:text-[var(--text)]"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -149,7 +149,7 @@ export default function CuentaPage() {
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-7 h-7 text-[#077f4e] animate-spin" />
+          <Loader2 className="w-7 h-7 text-[var(--brand-ink)] animate-spin" />
         </div>
       ) : isEmpty ? (
         <EmptyState />
@@ -160,14 +160,14 @@ export default function CuentaPage() {
             <div className="bg-gradient-to-br from-[#0bb673]/15 to-[#0bb673]/5 border border-[#0bb673]/25 rounded-2xl p-4" style={{ animation: 'scale-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs text-[#077f4e] font-medium uppercase tracking-wider">Por cobrar</p>
-                  <p className="money text-3xl font-black text-[#077f4e] mt-0.5">{formatCLP(pendingToCollect)}</p>
-                  <p className="text-xs text-[#6b5f55] mt-1">
+                  <p className="text-xs text-[var(--brand-ink)] font-medium uppercase tracking-wider">Por cobrar</p>
+                  <p className="money text-3xl font-black text-[var(--brand-ink)] mt-0.5">{formatCLP(pendingToCollect)}</p>
+                  <p className="text-xs text-[var(--text-2)] mt-1">
                     en {activeHost.length} boleta{activeHost.length !== 1 ? 's' : ''} activa{activeHost.length !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-[#0bb673]/15 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-[#077f4e]" />
+                  <TrendingUp className="w-5 h-5 text-[var(--brand-ink)]" />
                 </div>
               </div>
             </div>
@@ -204,8 +204,8 @@ export default function CuentaPage() {
 
       {/* Floating + button */}
       <Link href="/crear" className="fixed bottom-6 right-4 z-50">
-        <button aria-label="Nueva boleta" className="w-14 h-14 bg-[#0bb673] rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(11,182,115,0.4)] hover:bg-[#0a9c63] active:scale-95 transition-all">
-          <Plus className="w-6 h-6 text-[#1a1614]" strokeWidth={2.5} />
+        <button aria-label="Nueva boleta" className="w-14 h-14 bg-[#0bb673] rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(11,182,115,0.4)] hover:bg-[#0a9c63] active:scale-95 transition-[transform,background-color]">
+          <Plus className="w-6 h-6 text-[var(--text)]" strokeWidth={2.5} />
         </button>
       </Link>
     </div>
@@ -218,8 +218,8 @@ function Section({ title, count, children }: { title: string; count: number; chi
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-[#6b5f55] uppercase tracking-wider">{title}</span>
-        <span className="text-xs bg-[#f6f1ea] border border-[#ece2d5] rounded-full px-2 py-0.5 text-[#6b5f55]">
+        <span className="text-xs font-semibold text-[var(--text-2)] uppercase tracking-wider">{title}</span>
+        <span className="text-xs bg-[var(--fill)] border border-[var(--line)] rounded-full px-2 py-0.5 text-[var(--text-2)]">
           {count}
         </span>
       </div>
@@ -239,20 +239,20 @@ function HostSessionCard({ card }: { card: SessionCard }) {
 
   return (
     <Link href={`/host/${local.id}`}>
-      <div className="bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 hover:border-[#e0d4c4] lift">
+      <div className="bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 hover:border-[var(--line-2)] lift">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isEqual ? 'bg-[#eeebfd]' : 'bg-[#e7f9f0]'}`}>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isEqual ? 'bg-[var(--violet-bg)]' : 'bg-[var(--brand-bg)]'}`}>
               {isEqual
-                ? <Users className="w-4 h-4 text-[#5b4dc7]" />
-                : <Utensils className="w-4 h-4 text-[#077f4e]" />
+                ? <Users className="w-4 h-4 text-[var(--violet-ink)]" />
+                : <Utensils className="w-4 h-4 text-[var(--brand-ink)]" />
               }
             </div>
             <div>
               <p className="font-semibold text-sm leading-tight">
                 {local.restaurantName ?? 'Sin nombre'}
               </p>
-              <p className="text-xs text-[#6b5f55] mt-0.5">
+              <p className="text-xs text-[var(--text-2)] mt-0.5">
                 {date} · {participantCount} persona{participantCount !== 1 ? 's' : ''}
                 {isEqual && ' · partes iguales'}
               </p>
@@ -261,8 +261,8 @@ function HostSessionCard({ card }: { card: SessionCard }) {
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${
               isActive
-                ? 'bg-[#0bb673]/10 text-[#077f4e] border-[#0bb673]/20'
-                : 'bg-[#f6f1ea] text-[#6b5f55] border-[#ece2d5]'
+                ? 'bg-[#0bb673]/10 text-[var(--brand-ink)] border-[#0bb673]/20'
+                : 'bg-[var(--fill)] text-[var(--text-2)] border-[var(--line)]'
             }`}>
               {isActive ? 'Activa' : 'Cerrada'}
             </span>
@@ -272,17 +272,17 @@ function HostSessionCard({ card }: { card: SessionCard }) {
         {target > 0 && (
           <>
             <div className="flex items-center justify-between mb-1.5 text-xs">
-              <span className="text-[#6b5f55]">
+              <span className="text-[var(--text-2)]">
                 {confirmedCount}/{participantCount} pagaron
               </span>
               <span className="money">
-                <span className="font-bold text-[#077f4e]">{formatCLP(confirmedAmount)}</span>
-                <span className="text-[#6b5f55]"> / {formatCLP(target)}</span>
+                <span className="font-bold text-[var(--brand-ink)]">{formatCLP(confirmedAmount)}</span>
+                <span className="text-[var(--text-2)]"> / {formatCLP(target)}</span>
               </span>
             </div>
-            <div className="h-1.5 bg-[#f1e9dd] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[var(--fill-2)] rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#0bb673] rounded-full transition-all duration-700"
+                className="h-full bg-[#0bb673] rounded-full transition-[width] duration-700"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -290,11 +290,11 @@ function HostSessionCard({ card }: { card: SessionCard }) {
         )}
 
         <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1 text-xs text-[#6b5f55]">
+          <div className="flex items-center gap-1 text-xs text-[var(--text-2)]">
             <Share2 className="w-3 h-3" />
             <span>Compartir link</span>
           </div>
-          <ArrowUpRight className="w-4 h-4 text-[#6b5f55]" />
+          <ArrowUpRight className="w-4 h-4 text-[var(--text-2)]" />
         </div>
       </div>
     </Link>
@@ -311,38 +311,38 @@ function ParticipantSessionCard({ card }: { card: SessionCard }) {
 
   return (
     <Link href={`/s/${local.id}`}>
-      <div className="bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 hover:border-[#e0d4c4] lift">
+      <div className="bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-2xl p-4 hover:border-[var(--line-2)] lift">
         <div className="flex items-center gap-3">
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
             isConfirmed
               ? 'bg-[#0bb673]/15 border border-[#0bb673]/20'
               : hasPaid
               ? 'bg-[#fef3c7] border border-[#fcd34d]'
-              : 'bg-[#f6f1ea] border border-[#ece2d5]'
+              : 'bg-[var(--fill)] border border-[var(--line)]'
           }`}>
             {isConfirmed
-              ? <CheckCircle2 className="w-4 h-4 text-[#077f4e]" />
+              ? <CheckCircle2 className="w-4 h-4 text-[var(--brand-ink)]" />
               : hasPaid
               ? <Clock className="w-4 h-4 text-[#b45309]" />
-              : <Clock className="w-4 h-4 text-[#6b5f55]" />
+              : <Clock className="w-4 h-4 text-[var(--text-2)]" />
             }
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm truncate">
               {local.restaurantName ?? 'Sin nombre'}
             </p>
-            <p className="text-xs text-[#6b5f55] mt-0.5">
+            <p className="text-xs text-[var(--text-2)] mt-0.5">
               {date} · {local.hostName ?? 'Host'} te invitó
             </p>
           </div>
           <div className="text-right shrink-0">
             {myPayment && (
-              <p className={`money text-sm font-bold ${isConfirmed ? 'text-[#077f4e]' : 'text-[#4a423b]'}`}>
+              <p className={`money text-sm font-bold ${isConfirmed ? 'text-[var(--brand-ink)]' : 'text-[var(--text-1)]'}`}>
                 {formatCLP(myPayment.amount)}
               </p>
             )}
             <p className={`text-xs mt-0.5 ${
-              isConfirmed ? 'text-[#077f4e]' : hasPaid ? 'text-[#b45309]' : 'text-[#6b5f55]'
+              isConfirmed ? 'text-[var(--brand-ink)]' : hasPaid ? 'text-[#b45309]' : 'text-[var(--text-2)]'
             }`}>
               {isConfirmed ? 'Confirmado ✓' : hasPaid ? 'Pendiente' : 'Sin pagar'}
             </p>
@@ -358,12 +358,12 @@ function ParticipantSessionCard({ card }: { card: SessionCard }) {
 function EmptyState() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center py-16">
-      <div className="w-20 h-20 rounded-2xl bg-[#e7f9f0] flex items-center justify-center text-4xl">
+      <div className="w-20 h-20 rounded-2xl bg-[var(--brand-bg)] flex items-center justify-center text-4xl">
         🧾
       </div>
       <div>
-        <p className="font-semibold text-[#4a423b]">No tienes boletas aún</p>
-        <p className="text-sm text-[#6b5f55] mt-1 max-w-[200px] mx-auto leading-relaxed">
+        <p className="font-semibold text-[var(--text-1)]">No tienes boletas aún</p>
+        <p className="text-sm text-[var(--text-2)] mt-1 max-w-[200px] mx-auto leading-relaxed">
           Crea una la próxima vez que salgas a comer
         </p>
       </div>

@@ -1,6 +1,6 @@
 // Service Worker — notificaciones push + offline real
 // Sube el número de versión para invalidar cachés viejas tras un deploy.
-const VERSION = 'apagar-v2'
+const VERSION = 'apagar-v3'
 const CORE_CACHE = `${VERSION}-core`
 const RUNTIME_CACHE = `${VERSION}-runtime`
 
@@ -37,6 +37,14 @@ self.addEventListener('fetch', e => {
 
   // Navegaciones (HTML): network-first → cache → shell '/'
   if (request.mode === 'navigate') {
+    // Páginas semi-privadas (panel del host, sesión de un invitado): nunca se
+    // cachean. En un dispositivo compartido evita servir el HTML de la boleta de
+    // otra persona desde caché. Siempre red, con fallback al shell '/'.
+    const isPrivate = url.pathname.startsWith('/host/') || url.pathname.startsWith('/s/')
+    if (isPrivate) {
+      e.respondWith(fetch(request).catch(() => caches.match('/')))
+      return
+    }
     e.respondWith(
       fetch(request)
         .then(res => {

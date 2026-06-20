@@ -1,44 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  /* ── Tema claro cálido — "app de amigos" ────────────────────────
-     Fondo crema, tarjetas blancas, sombras tibias. Verde para la
-     plata, coral como acento social. */
-  --bg:        #faf2e7;
-  --bg-2:      #f4ead9;
-  --surface:   #ffffff;
+  /* ── Sistema de tokens — tema claro cálido "app de amigos" ───────────────────
+     Una sola fuente de verdad para el color. Los componentes usan var(--token)
+     (no hex sueltos), así el modo oscuro se logra solo redefiniendo estos tokens.
+     Jerarquía 60/30/10: superficie+texto (60), neutros cálidos (30), marca (10). */
+
+  /* Superficies (60%) — del fondo al primer plano */
+  --bg:        #faf2e7; /* fondo crema */
+  --bg-2:      #f4ead9; /* fondo tonal */
+  --surface:   #ffffff; /* tarjetas */
   --surface-2: #f4ead9; /* superficie tonal plana — info pasiva */
   --surface-3: #ece0cd;
-  --border:    #e7d9c5;
-  --border-2:  #ddccb4;
+  --fill:      #f6f1ea; /* relleno suave — hover, chips, inputs */
+  --fill-2:    #f1e9dd; /* relleno un punto más profundo (tracks) */
 
-  /* Brand — verde. #0bb673 sirve para FONDOS/relleno; para TEXTO sobre claro
-     usar --brand-ink (más oscuro) que sí pasa contraste AA. */
+  /* Líneas / bordes */
+  --line:      #ece2d5; /* borde por defecto de tarjetas/chips */
+  --line-2:    #e0d4c4; /* borde con más presencia */
+  --border:    #e7d9c5; /* (legado) */
+  --border-2:  #ddccb4; /* (legado) */
+
+  /* Texto — neutros cálidos. text-1/2 pasan AA en texto chico; text-3 es
+     decorativo (no usar en texto pequeño esencial). */
+  --text:      #1a1614; /* principal */
+  --text-1:    #4a423b; /* secundario fuerte */
+  --text-2:    #6b5f55; /* secundario ≥4.5:1 sobre crema y blanco */
+  --text-3:    #8a7d71; /* terciario / decorativo */
+
+  /* Marca — verde (10%). --brand para FONDOS; --brand-ink para TEXTO (AA). */
   --brand:      #0bb673;
   --brand-2:    #16d488;
   --brand-ink:  #0a6f47; /* verde para texto sobre fondos claros (AA) */
   --brand-dim:  #0a9c63;
   --brand-deep: #073d27; /* verde profundo — gradientes de "tu parte" */
   --brand-fg:   #ffffff;
+  --brand-bg:   #e7f9f0; /* relleno verde claro (chips de ícono) */
   --brand-soft: rgba(11, 182, 115, 0.10);
 
-  /* Accent — coral social (eyebrow, foto, detalles) */
+  /* Acento — coral social (eyebrow, foto, detalles) */
   --coral:      #ff6a45;
   --coral-2:    #f2542d;
   --coral-ink:  #c43c1c; /* coral para texto sobre claro (AA) */
   --coral-soft: #ffe7df;
 
-  /* Secondary — violeta (modo "partes iguales") */
+  /* Secundario — violeta (modo "partes iguales") */
   --violet:      #7c6cf0;
+  --violet-ink:  #5b4dc7; /* violeta para texto sobre claro (AA) */
+  --violet-bg:   #ece9fd; /* relleno violeta claro */
   --violet-soft: rgba(124, 108, 240, 0.10);
 
-  /* Texto — neutros cálidos. text-2 es legible para texto chico (AA);
-     text-3 es solo para detalles grandes/decorativos, no texto crítico. */
-  --text:      #1a1614;
-  --text-2:    #6b5f55; /* ≥4.5:1 sobre crema y blanco */
-  --text-3:    #8a7d71; /* decorativo — no usar en texto pequeño esencial */
-
-  /* Semantic */
+  /* Semánticos */
   --destructive: #e5484d;
   --warning:     #d9890b;
 
@@ -51,11 +63,57 @@
   --background:  var(--bg);
   --foreground:  var(--text);
   --card:        var(--surface);
-  --card-border: var(--border);
+  --card-border: var(--line);
   --accent:      var(--brand);
   --accent-dim:  var(--brand-dim);
-  --muted:       var(--border-2);
+  --muted:       var(--line-2);
   --muted-fg:    var(--text-2);
+}
+
+/* ── Modo oscuro ─────────────────────────────────────────────────────────────
+   App de finanzas que se usa de noche en restaurantes. Paleta cálida y
+   DESATURADA (no invertida): mismos tokens, valores nocturnos. Solo se redefine
+   lo que cambia; la marca/acentos se aclaran para texto sobre superficies
+   oscuras. ⚠️ Revisar visualmente en dispositivo: los VALORES son ajustables;
+   la ESTRUCTURA (todo token-driven) ya está completa. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #17120f;
+    --bg-2:      #1f1813;
+    --surface:   #241c16;
+    --surface-2: #1f1813;
+    --surface-3: #2c231c;
+    --fill:      #2c231c;
+    --fill-2:    #332a22;
+
+    --line:      #3a2f27;
+    --line-2:    #4a3d33;
+    --border:    #3a2f27;
+    --border-2:  #4a3d33;
+
+    --text:      #f5ece1;
+    --text-1:    #ddd0c2;
+    --text-2:    #b6a897; /* ≥7:1 sobre --surface */
+    --text-3:    #978a7c; /* ≥5:1 sobre --surface */
+
+    --brand:      #16d488;
+    --brand-ink:  #4fdfa0; /* verde claro para texto sobre oscuro */
+    --brand-dim:  #16d488;
+    --brand-fg:   #0c1a13;
+    --brand-bg:   #173a2a;
+
+    --coral-ink:  #ff9576;
+    --coral-soft: #3a201a;
+
+    --violet:     #8f82f5;
+    --violet-ink: #a99cf7;
+    --violet-bg:  #2a2542;
+
+    /* Sombras neutras y profundas (el tinte café no funciona sobre oscuro) */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.55);
+  }
 }
 
 @theme inline {
@@ -79,7 +137,21 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { color-scheme: light; }
+html { color-scheme: light dark; }
+
+/* Elimina el delay/zoom de doble-tap en controles táctiles (Web Interface
+   Guidelines). El -webkit-tap-highlight-color ya se neutraliza más abajo. */
+button, a, label, select, input, [role='button'] { touch-action: manipulation; }
+
+/* ── Safe areas (notch / home indicator) — PWA instalada ─────────────────────
+   Requieren viewport-fit=cover (ver viewport en layout.tsx) para que
+   env(safe-area-inset-*) devuelva valores reales. */
+@utility pt-safe { padding-top: max(0px, env(safe-area-inset-top)); }
+@utility pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+@utility min-h-dvh-safe {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+}
 
 body {
   background: var(--bg);
@@ -229,13 +301,3 @@ input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
   }
 }
 
-/* Grain overlay (legacy, sin uso activo) */
-.grain::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-}

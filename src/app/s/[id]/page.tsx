@@ -91,11 +91,11 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         <div className="min-h-dvh flex flex-col w-full max-w-md mx-auto px-4 py-6 gap-4">
           <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#bff0d8]/45 blur-[100px] rounded-full -z-10" />
           <div className="text-center mt-6">
-            <div className="w-12 h-12 rounded-2xl bg-[#ece2d5] flex items-center justify-center mx-auto mb-3">
-              <Clock className="w-6 h-6 text-[#6b5f55]" />
+            <div className="w-12 h-12 rounded-2xl bg-[var(--line)] flex items-center justify-center mx-auto mb-3">
+              <Clock className="w-6 h-6 text-[var(--text-2)]" />
             </div>
             <h1 className="font-display text-xl font-bold">Boleta cerrada</h1>
-            <p className="text-sm text-[#6b5f55] mt-1">
+            <p className="text-sm text-[var(--text-2)] mt-1">
               {session.restaurant_name ? `La cuenta de ${session.restaurant_name}` : 'Esta cuenta'} ya fue cerrada por {session.host_name}. Si aún no transferiste tu parte, coordínala directo con {session.host_name}{closedDetails.length > 1 ? ' usando estos datos:' : '.'}
             </p>
           </div>
@@ -105,20 +105,20 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
                 <button
                   key={label}
                   onClick={() => copyClosed(value!, label)}
-                  className="w-full flex items-center justify-between bg-[#ffffff] border border-[#f6f1ea] rounded-xl px-4 py-3 hover:border-[#e0d4c4] active:scale-95 transition-all"
+                  className="w-full flex items-center justify-between bg-[var(--surface)] border border-[var(--fill)] rounded-xl px-4 py-3 hover:border-[var(--line-2)] active:scale-95 transition-[transform,border-color]"
                 >
                   <div className="text-left">
-                    <p className="text-xs text-[#6b5f55]">{label}</p>
+                    <p className="text-xs text-[var(--text-2)]">{label}</p>
                     <p className="text-sm font-medium">{value}</p>
                   </div>
-                  <Copy className="w-4 h-4 text-[#6b5f55]" />
+                  <Copy className="w-4 h-4 text-[var(--text-2)]" />
                 </button>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-[#6b5f55] text-center">El anfitrión no dejó datos de transferencia acá. Contáctalo directamente.</p>
+            <p className="text-sm text-[var(--text-2)] text-center">El anfitrión no dejó datos de transferencia acá. Contáctalo directamente.</p>
           )}
-          <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors text-center py-2 mt-auto">← Volver al inicio</Link>
+          <Link href="/" className="text-sm text-[var(--text-2)] hover:text-[var(--text)] transition-colors text-center py-2 mt-auto">← Volver al inicio</Link>
         </div>
       )
     }
@@ -180,7 +180,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           <h1 className="font-display text-[1.7rem] font-semibold leading-tight">
             {session.restaurant_name ?? 'Dividiendo la cuenta'}
           </h1>
-          <p className="text-sm text-[#6b5f55] mt-1">
+          <p className="text-sm text-[var(--text-2)] mt-1">
             {session.host_name} te invita
             {isEqual ? ' a dividir en partes iguales' : ' a marcar lo que pediste'}
           </p>
@@ -189,10 +189,10 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             <div className="mt-4 bg-[#7c6cf0]/10 border border-[#7c6cf0]/25 rounded-2xl px-4 py-3">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Users className="w-4 h-4 text-[#7c6cf0]" />
-                <span className="text-xs text-[#5b4dc7] font-medium">Tu parte estimada</span>
+                <span className="text-xs text-[var(--violet-ink)] font-medium">Tu parte estimada</span>
               </div>
-              <p className="money text-2xl font-black text-[#1a1614]">{formatCLP(sharePerPerson)}</p>
-              <p className="text-xs text-[#6b5f55] mt-1">
+              <p className="money text-2xl font-black text-[var(--text)]">{formatCLP(sharePerPerson)}</p>
+              <p className="text-xs text-[var(--text-2)] mt-1">
                 {formatCLP(session.split_total ?? 0)} ÷ {session.split_n} personas
               </p>
             </div>
@@ -201,10 +201,10 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
         {participants.length > 0 && (
           <div className="w-full">
-            <p className="text-xs text-[#6b5f55] mb-2">Ya están adentro:</p>
+            <p className="text-xs text-[var(--text-2)] mb-2">Ya están adentro:</p>
             <div className="flex flex-wrap gap-2">
               {existingNames.map(name => (
-                <span key={name} className="text-xs bg-[#f6f1ea] border border-[#ece2d5] rounded-full px-3 py-1 text-[#4a423b]">
+                <span key={name} className="text-xs bg-[var(--fill)] border border-[var(--line)] rounded-full px-3 py-1 text-[var(--text-1)]">
                   {name}
                 </span>
               ))}
@@ -215,11 +215,15 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         <div className="w-full space-y-3">
           <Input
             label="¿Cómo te llamas?"
-            placeholder="Ej: María, Cami, Juanjo..."
+            placeholder="Ej: María, Cami, Juanjo…"
             value={nameInput}
             onChange={e => setNameInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleJoin()}
-            autoFocus
+            name="name"
+            autoComplete="name"
+            // Solo enfocar automáticamente en desktop: en móvil abre el teclado
+            // y reposiciona el viewport apenas carga (Web Interface Guidelines).
+            autoFocus={typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches}
           />
           <Button fullWidth size="lg" loading={creating} onClick={handleJoin}>
             {isEqual ? 'Entrar y pagar' : 'Entrar'} <ArrowRight className="w-4 h-4" />
@@ -231,7 +235,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 
   if (!me) return <ErrorScreen message="Error cargando tu perfil" />
 
-  const summary = computeParticipantSummary(me, items, claims, payments, session.propina_pct)
+  const summary = computeParticipantSummary(me, items, claims, payments, session.propina_pct, participants)
 
   // For equal splits: jump directly to transfer step
   const sharePerPerson = isEqual && session.split_total && session.split_n
@@ -247,11 +251,11 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
             <LogoMark className="w-6 h-6" />
-            <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
+            <span className="text-base font-black tracking-tight text-[var(--brand-ink)]">A-Pagar</span>
           </div>
           <h1 className="font-display text-2xl font-semibold">{session.restaurant_name ?? 'La cuenta'}</h1>
-          <p className="text-sm text-[#6b5f55] mt-1">
-            Marca lo que pediste, {me.name}. ¿Compartiste un plato? Toca <span className="font-medium text-[#0a6f47]">Dividir</span> y que el otro también lo tome.
+          <p className="text-sm text-[var(--text-2)] mt-1">
+            Marca lo que pediste, {me.name}. ¿Compartiste un plato? Toca <span className="font-medium text-[var(--brand-ink)]">Dividir</span> y que el otro también lo tome.
           </p>
           {participants.length > 0 && (
             <div className="mt-3">
@@ -273,7 +277,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           />
           {/* Guía que llena el espacio cuando aún no marcas nada */}
           {summary.items.length === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center text-center gap-2.5 py-10 text-[#9a8b7c]">
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-2.5 py-10 text-[var(--text-3)]">
               <CheckCircle2 className="w-9 h-9 opacity-50" strokeWidth={1.6} />
               <p className="text-sm max-w-[24ch] leading-snug">Toca los platos que pediste para sumar tu parte.</p>
             </div>
@@ -281,19 +285,19 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Sticky total */}
-        <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-[#faf2e7] from-70% to-transparent">
+        <div className="sticky bottom-0 pt-4 pb-safe bg-gradient-to-t from-[var(--bg)] from-70% to-transparent">
           <Card variant="elevated" className="p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
                 <p className="meta">Tu total a pagar</p>
-                <p className="money text-2xl font-black text-[#077f4e]">{formatCLP(summary.total)}</p>
+                <p className="money text-2xl font-black text-[var(--brand-ink)]">{formatCLP(summary.total)}</p>
                 {session.propina_pct > 0 && summary.items.length > 0 && (
-                  <p className="text-xs text-[#6b5f55]">
+                  <p className="text-xs text-[var(--text-2)]">
                     {formatCLP(summary.subtotal)} + propina {formatCLP(summary.propina)}
                   </p>
                 )}
               </div>
-              <div className="text-right text-xs text-[#6b5f55]">
+              <div className="text-right text-xs text-[var(--text-2)]">
                 <p>{summary.items.length} ítem{summary.items.length !== 1 ? 's' : ''}</p>
                 <p>de {items.length} en la boleta</p>
               </div>
@@ -424,22 +428,22 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         <div>
           <div className="flex items-center gap-2 mb-1">
             <LogoMark className="w-6 h-6" />
-            <span className="text-base font-black tracking-tight text-[#077f4e]">A-Pagar</span>
+            <span className="text-base font-black tracking-tight text-[var(--brand-ink)]">A-Pagar</span>
           </div>
           <h1 className="font-display text-xl font-bold">Tu total a pagar</h1>
         </div>
 
         {/* Total */}
         <Card variant="premium" className="p-4 text-center">
-          <p className="text-xs text-[#6b5f55] mb-1">Transferir a {session.host_name}</p>
-          <p className="money text-[clamp(1.9rem,9vw,2.25rem)] font-black text-[#077f4e] break-words" style={{ animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(myTotal)}</p>
+          <p className="text-xs text-[var(--text-2)] mb-1">Transferir a {session.host_name}</p>
+          <p className="money text-[clamp(1.9rem,9vw,2.25rem)] font-black text-[var(--brand-ink)] break-words" style={{ animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>{formatCLP(myTotal)}</p>
           {!isEqual && session.propina_pct > 0 && (
-            <p className="text-xs text-[#6b5f55] mt-1">
+            <p className="text-xs text-[var(--text-2)] mt-1">
               {formatCLP(summary.subtotal)} + propina {formatCLP(summary.propina)}
             </p>
           )}
           {isEqual && (
-            <p className="text-xs text-[#6b5f55] mt-1">
+            <p className="text-xs text-[var(--text-2)] mt-1">
               1/{session.split_n} del total de {formatCLP(session.split_total ?? 0)}
             </p>
           )}
@@ -460,10 +464,10 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         {/* Bank details */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-[#6b5f55]">Datos para transferir</p>
+            <p className="text-sm text-[var(--text-2)]">Datos para transferir</p>
             <button
               onClick={handleCopyAll}
-              className="flex items-center gap-1.5 text-xs text-[#077f4e] hover:text-[#0a8f5c] font-medium transition-colors active:scale-95"
+              className="flex items-center gap-1.5 text-xs text-[var(--brand-ink)] hover:text-[#0a8f5c] font-medium transition-colors active:scale-95"
             >
               <Copy className="w-3.5 h-3.5" /> Copiar todo
             </button>
@@ -479,13 +483,13 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
             <button
               key={label}
               onClick={() => handleCopy(value!, label)}
-              className="w-full flex items-center justify-between bg-[#ffffff] border border-[#f6f1ea] rounded-xl px-4 py-3 hover:border-[#e0d4c4] active:scale-95 transition-all"
+              className="w-full flex items-center justify-between bg-[var(--surface)] border border-[var(--fill)] rounded-xl px-4 py-3 hover:border-[var(--line-2)] active:scale-95 transition-[transform,border-color]"
             >
               <div className="text-left">
-                <p className="text-xs text-[#6b5f55]">{label}</p>
+                <p className="text-xs text-[var(--text-2)]">{label}</p>
                 <p className="text-sm font-medium">{value}</p>
               </div>
-              <Copy className="w-4 h-4 text-[#6b5f55]" />
+              <Copy className="w-4 h-4 text-[var(--text-2)]" />
             </button>
           ))}
         </div>
@@ -493,11 +497,11 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         {/* Items breakdown — only for per-item mode */}
         {!isEqual && summary.items.length > 0 && (
           <Card className="p-3">
-            <p className="text-xs text-[#6b5f55] mb-2">Lo que marcaste</p>
+            <p className="text-xs text-[var(--text-2)] mb-2">Lo que marcaste</p>
             {summary.items.map(item => (
               <div key={item.id} className="flex justify-between text-sm py-0.5">
-                <span className="text-[#4a423b] truncate">{item.name}</span>
-                <span className="text-[#6b5f55] shrink-0 ml-2">{formatCLP(item.price_per_person)}</span>
+                <span className="text-[var(--text-1)] truncate">{item.name}</span>
+                <span className="text-[var(--text-2)] shrink-0 ml-2">{formatCLP(item.price_per_person)}</span>
               </div>
             ))}
           </Card>
@@ -520,14 +524,14 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
           <button
             onClick={handleMarkAsPaid}
             disabled={uploadingComprobante}
-            className="w-full text-sm text-[#6b5f55] hover:text-[#4a423b] py-2 transition-colors disabled:opacity-40"
+            className="w-full text-sm text-[var(--text-2)] hover:text-[var(--text-1)] py-2 transition-colors disabled:opacity-40"
           >
             Ya transferí, sin comprobante
           </button>
           {!isEqual && (
             <button
               onClick={() => setStep('items')}
-              className="w-full text-sm text-[#6b5f55] hover:text-[#4a423b] py-2 transition-colors"
+              className="w-full text-sm text-[var(--text-2)] hover:text-[var(--text-1)] py-2 transition-colors"
             >
               ← Volver a los ítems
             </button>
@@ -549,17 +553,17 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         <span className="absolute inset-0 rounded-full border border-[#0bb673]/30 animate-ping" style={{ animationDuration: '2s' }} />
         <span className="absolute -inset-3 rounded-full border border-[#0bb673]/15 animate-ping" style={{ animationDuration: '2.6s' }} />
         <div className="relative w-24 h-24 rounded-full bg-[#0bb673]/10 border-2 border-[#0bb673]/30 flex items-center justify-center brand-glow">
-          <CheckCircle2 className="w-12 h-12 text-[#077f4e]" />
+          <CheckCircle2 className="w-12 h-12 text-[var(--brand-ink)]" />
         </div>
       </div>
 
       <div style={{ animation: 'fade-up 0.5s cubic-bezier(0.22,1,0.36,1) 0.15s both' }}>
         <h1 className="font-display text-3xl font-black">¡Listo!</h1>
-        <p className="text-[#6b5f55] mt-2">
+        <p className="text-[var(--text-2)] mt-2">
           Le avisamos a {session.host_name} que ya transferiste.
         </p>
-        <p className="money text-lg font-bold text-[#1a1614] mt-3">{formatCLP(myTotal)}</p>
-        <p className="text-sm text-[#6b5f55]">
+        <p className="money text-lg font-bold text-[var(--text)] mt-3">{formatCLP(myTotal)}</p>
+        <p className="text-sm text-[var(--text-2)]">
           {session.restaurant_name ? `${session.restaurant_name} · ` : ''}{me.name}
         </p>
       </div>
@@ -583,7 +587,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
 function LoadingScreen() {
   return (
     <div className="min-h-dvh flex items-center justify-center">
-      <Loader2 className="w-8 h-8 text-[#077f4e] animate-spin" />
+      <Loader2 className="w-8 h-8 text-[var(--brand-ink)] animate-spin" />
     </div>
   )
 }
@@ -593,7 +597,7 @@ function ErrorScreen({ message }: { message: string }) {
     <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4 text-center">
       <AlertCircle className="w-10 h-10 text-[#e5484d]" />
       <p className="font-medium">{message}</p>
-      <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors">← Volver al inicio</Link>
+      <Link href="/" className="text-sm text-[var(--text-2)] hover:text-[var(--text)] transition-colors">← Volver al inicio</Link>
     </div>
   )
 }

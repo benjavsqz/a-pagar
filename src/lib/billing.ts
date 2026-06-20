@@ -57,7 +57,7 @@ export function computeHostCollection(args: {
   let target = 0
   let confirmed = 0
   for (const guest of guests) {
-    const summary = computeParticipantSummary(guest, items, claims, payments, propinaPct)
+    const summary = computeParticipantSummary(guest, items, claims, payments, propinaPct, participants)
     target += summary.total
     if (summary.payment?.confirmed_by_host) confirmed += summary.total
   }

@@ -11,6 +11,7 @@ interface OcrResult {
   subtotal?: number | null
   extractedTotal?: number
   mismatch?: boolean
+  droppedLowValue?: number
 }
 
 interface OcrUploaderProps {
@@ -37,6 +38,7 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
   const [preview, setPreview] = useState<string | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [detectedCount, setDetectedCount] = useState(0)
+  const [droppedCount, setDroppedCount] = useState(0)
   const [errorMsg, setErrorMsg] = useState('')
   const [mismatch, setMismatch] = useState<{ extracted: number; subtotal: number } | null>(null)
 
@@ -75,6 +77,7 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
       if (data.error) throw new Error(data.error)
 
       setDetectedCount(data.items.length)
+      setDroppedCount(data.droppedLowValue ?? 0)
       if (data.mismatch && data.subtotal && data.extractedTotal) {
         setMismatch({ extracted: data.extractedTotal, subtotal: data.subtotal })
       }
@@ -98,6 +101,7 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
     setPreview(null)
     setStatus('idle')
     setErrorMsg('')
+    setDroppedCount(0)
   }
 
   const isProcessing = status === 'compressing' || status === 'processing' || status === 'retrying'
@@ -129,27 +133,27 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => inputRef.current?.click()}
-              className="h-28 bg-[#ffffff] border-2 border-dashed border-[#ece2d5] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#0bb673]/40 active:scale-[0.97] transition-all"
+              className="h-28 bg-[var(--surface)] border-2 border-dashed border-[var(--line)] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#0bb673]/40 active:scale-[0.97] transition-[transform,border-color,background-color]"
             >
-              <div className="w-10 h-10 rounded-full bg-[#e7f9f0] flex items-center justify-center">
-                <Camera className="w-5 h-5 text-[#077f4e]" />
+              <div className="w-10 h-10 rounded-full bg-[var(--brand-bg)] flex items-center justify-center">
+                <Camera className="w-5 h-5 text-[var(--brand-ink)]" />
               </div>
               <p className="text-xs font-semibold">Tomar foto</p>
             </button>
             <button
               onClick={() => galleryRef.current?.click()}
-              className="h-28 bg-[#ffffff] border-2 border-dashed border-[#ece2d5] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#0bb673]/40 active:scale-[0.97] transition-all"
+              className="h-28 bg-[var(--surface)] border-2 border-dashed border-[var(--line)] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#0bb673]/40 active:scale-[0.97] transition-[transform,border-color,background-color]"
             >
-              <div className="w-10 h-10 rounded-full bg-[#e7f9f0] flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-[#077f4e]" />
+              <div className="w-10 h-10 rounded-full bg-[var(--brand-bg)] flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-[var(--brand-ink)]" />
               </div>
               <p className="text-xs font-semibold">Desde galería</p>
             </button>
           </div>
-          <p className="text-xs text-[#6b5f55] text-center">Apunta bien al total de la boleta</p>
+          <p className="text-xs text-[var(--text-2)] text-center">Apunta bien al total de la boleta</p>
         </div>
       ) : (
-        <div className="relative w-full rounded-2xl overflow-hidden bg-[#ffffff] border border-[#ece2d5]">
+        <div className="relative w-full rounded-2xl overflow-hidden bg-[var(--surface)] border border-[var(--line)]">
           {/* width/height reservan espacio mientras carga el blob, evitando CLS.
               Es un blob: local (preview); next/image no aplica aquí. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -157,7 +161,7 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
 
           {isProcessing && (
             <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4">
-              <Loader2 className="w-9 h-9 text-[#077f4e] animate-spin" />
+              <Loader2 className="w-9 h-9 text-[var(--brand-ink)] animate-spin" />
               <div className="text-center">
                 <p className="text-sm font-semibold text-white">{STATUS_MESSAGES[status]}</p>
                 <p className="text-xs text-white/70 mt-1">Esto toma unos segundos</p>
@@ -169,12 +173,12 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
                   return (
                     <div
                       key={s}
-                      className={`w-2 h-2 rounded-full transition-all ${
+                      className={`w-2 h-2 rounded-full transition-[transform,border-color,background-color] ${
                         idx === activeIdx
                           ? 'bg-[#0bb673] scale-125'
                           : idx < activeIdx
                           ? 'bg-[#0bb673]/50'
-                          : 'bg-[#e0d4c4]'
+                          : 'bg-[var(--line-2)]'
                       }`}
                     />
                   )
@@ -187,17 +191,24 @@ export function OcrUploader({ onResult, onPreviewReady, onImageReady, onManual }
 
       {/* Success */}
       {status === 'done' && (
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2 text-xs text-[#077f4e]">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>{detectedCount} ítem{detectedCount !== 1 ? 's' : ''} detectado{detectedCount !== 1 ? 's' : ''} — revisa abajo</span>
+        <div className="flex flex-col gap-1 px-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-[var(--brand-ink)]">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{detectedCount} ítem{detectedCount !== 1 ? 's' : ''} detectado{detectedCount !== 1 ? 's' : ''} — revisa abajo</span>
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs text-[var(--text-2)] hover:text-[var(--text-1)] flex items-center gap-1 transition-colors"
+            >
+              <Upload className="w-3 h-3" /> Otra foto
+            </button>
           </div>
-          <button
-            onClick={retry}
-            className="text-xs text-[#6b5f55] hover:text-[#4a423b] flex items-center gap-1 transition-colors"
-          >
-            <Upload className="w-3 h-3" /> Otra foto
-          </button>
+          {droppedCount > 0 && (
+            <p className="text-[11px] text-[var(--text-3)]">
+              Omití {droppedCount} línea{droppedCount !== 1 ? 's' : ''} de menos de $200 (suele ser ruido). Si falta algo, agrégalo abajo.
+            </p>
+          )}
         </div>
       )}
 
