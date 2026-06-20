@@ -6,12 +6,17 @@ import { createClient } from '@/lib/supabase/client'
 import { formatCLP } from '@/lib/utils'
 import { computeHostCollection } from '@/lib/billing'
 import { getLocalSessions, type LocalSessionEntry } from '@/lib/local-sessions'
+import { sendMagicLink, signOut, type AuthResult } from '@/lib/auth-actions'
+import {
+  getAccountSessionIds, linkSessionsToAccount,
+} from '@/lib/user-sessions'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { LogoMark } from '@/components/brand/logo-mark'
 import {
   ChevronLeft, Plus, Loader2, Utensils, CheckCircle2,
   Clock, Users, ArrowUpRight, TrendingUp, Share2, Trash2,
+  Mail, LogOut, CloudUpload, Check,
 } from 'lucide-react'
 import type { Session, Item, Participant, Payment, Claim } from '@/types'
 
@@ -32,6 +37,9 @@ interface SessionCard {
   confirmedAmount: number
   confirmedCount: number
   myPayment: { amount: number; confirmed: boolean } | null
+  // true si esta boleta NO está en el dispositivo y vino solo de la cuenta
+  // (índice personal en user_sessions). Se muestra en modo "solo lectura".
+  fromAccountOnly?: boolean
 }
 
 // ── Main page ────────────────────────────────────────────────────────────────
@@ -41,6 +49,9 @@ export default function CuentaPage() {
   const [cards, setCards] = useState<SessionCard[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmWipe, setConfirmWipe] = useState(false)
+  // Auth opcional: email del usuario si inició sesión (null = anónimo, como siempre)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   const wipeLocalData = () => {
     for (const key of LOCAL_KEYS) localStorage.removeItem(key)
@@ -50,11 +61,42 @@ export default function CuentaPage() {
 
   useEffect(() => {
     const load = async () => {
-      const locals = getLocalSessions()
-      if (locals.length === 0) { setLoading(false); return }
-
-      const ids = locals.map(l => l.id)
       const supabase = createClient()
+
+      // Auth es opcional. getUser() devuelve null para usuarios anónimos; nunca
+      // bloquea ni cambia el flujo sin cuenta.
+      let accountIds: string[] = []
+      try {
+        const { data: userData } = await supabase.auth.getUser()
+        const email = userData.user?.email ?? null
+        setUserEmail(email)
+        if (email) accountIds = await getAccountSessionIds(supabase)
+      } catch {
+        setUserEmail(null)
+      }
+
+      const locals = getLocalSessions()
+      const localIds = new Set(locals.map(l => l.id))
+
+      // Boletas guardadas en la cuenta que NO están en este dispositivo: se
+      // muestran en modo solo lectura para que el historial sobreviva entre
+      // dispositivos. No tienen host_token aquí, así que no se puede actuar sobre
+      // ellas desde este equipo (lo gobierna el host_token, como siempre).
+      const accountOnly: LocalSessionEntry[] = accountIds
+        .filter(id => !localIds.has(id))
+        .map(id => ({
+          id,
+          role: 'participant' as const,
+          restaurantName: null,
+          hostName: null,
+          splitMode: 'items' as const,
+          createdAt: new Date().toISOString(),
+        }))
+
+      const allEntries = [...locals, ...accountOnly]
+      if (allEntries.length === 0) { setLoading(false); return }
+
+      const ids = allEntries.map(l => l.id)
 
       const [sessionsRes, itemsRes, participantsRes, paymentsRes, claimsRes] = await Promise.all([
         supabase.from('sessions').select('*').in('id', ids),
@@ -79,12 +121,21 @@ export default function CuentaPage() {
       const paymentsBy = groupBy((paymentsRes.data ?? []) as Payment[])
       const claimsBy = groupBy((claimsRes.data ?? []) as (Claim & { session_id: string })[])
 
-      const built: SessionCard[] = locals.map(local => {
+      const accountOnlyIds = new Set(accountOnly.map(e => e.id))
+
+      const built: SessionCard[] = allEntries.map(local => {
         const session = sessMap[local.id] ?? null
         const items = itemsBy[local.id] ?? []
         const participants = participantsBy[local.id] ?? []
         const payments = paymentsBy[local.id] ?? []
         const claims = claimsBy[local.id] ?? []
+        const fromAccountOnly = accountOnlyIds.has(local.id)
+
+        // Para boletas que solo vienen de la cuenta no tenemos el nombre local;
+        // lo tomamos de la sesión en la DB para mostrar algo útil.
+        if (fromAccountOnly && session) {
+          local = { ...local, restaurantName: session.restaurant_name, hostName: session.host_name }
+        }
 
         let myPayment: { amount: number; confirmed: boolean } | null = null
         if (local.role === 'participant' && local.participantId) {
@@ -117,6 +168,7 @@ export default function CuentaPage() {
           confirmedAmount,
           confirmedCount: payments.filter(p => p.confirmed_by_host).length,
           myPayment,
+          fromAccountOnly,
         }
       })
 
@@ -124,7 +176,12 @@ export default function CuentaPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [reloadKey])
+
+  // Boletas de este dispositivo (con host_token / participantId locales) que aún
+  // no están en la cuenta: candidatas a "guardar en mi cuenta".
+  const localCount = cards.filter(c => !c.fromAccountOnly).length
+  const accountOnlyCount = cards.filter(c => c.fromAccountOnly).length
 
   const hostCards = cards.filter(c => c.local.role === 'host')
   const participantCards = cards.filter(c => c.local.role === 'participant')
@@ -160,6 +217,19 @@ export default function CuentaPage() {
         </div>
         <h1 className="font-display text-xl font-bold ml-1">Mis boletas</h1>
       </div>
+
+      {/* Auth opcional: guardar boletas en una cuenta para que sobrevivan entre
+          dispositivos. Todo lo de abajo (crear/unirse/marcar/pagar) funciona igual
+          sin iniciar sesión. */}
+      {!loading && (
+        <AccountPanel
+          userEmail={userEmail}
+          localCount={localCount}
+          accountOnlyCount={accountOnlyCount}
+          localSessionIds={getLocalSessions().map(s => s.id)}
+          onLinked={() => setReloadKey(k => k + 1)}
+        />
+      )}
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
@@ -250,6 +320,158 @@ export default function CuentaPage() {
           <Plus className="w-6 h-6 text-[var(--text)]" strokeWidth={2.5} />
         </button>
       </Link>
+    </div>
+  )
+}
+
+// ── Account panel (auth opcional, magic link) ─────────────────────────────────
+// Aditivo y degradable: si Email auth no está habilitado en Supabase, enviar el
+// link falla y mostramos un aviso claro; nada del flujo anónimo depende de esto.
+
+function AccountPanel({
+  userEmail, localCount, accountOnlyCount, localSessionIds, onLinked,
+}: {
+  userEmail: string | null
+  localCount: number
+  accountOnlyCount: number
+  localSessionIds: string[]
+  onLinked: () => void
+}) {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState<AuthResult | null>(null)
+  const [linking, setLinking] = useState(false)
+  const [linkedOk, setLinkedOk] = useState(false)
+
+  // Aviso si el callback redirigió con error (?auth_error=1). Se lee una sola vez
+  // en el cliente (inicializador perezoso) y se limpia el query param.
+  const [callbackError] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const has = new URLSearchParams(window.location.search).get('auth_error')
+    if (has) window.history.replaceState(null, '', window.location.pathname)
+    return !!has
+  })
+
+  // ── No autenticado: ofrecer magic link ──
+  if (!userEmail) {
+    const onSubmit = async (e: React.FormEvent) => {
+      e.preventDefault()
+      setSending(true)
+      setFeedback(null)
+      const fd = new FormData()
+      fd.set('email', email)
+      const res = await sendMagicLink(fd)
+      setFeedback(res)
+      setSending(false)
+    }
+
+    return (
+      <div className="mb-6 bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[var(--brand-bg)] flex items-center justify-center shrink-0">
+            <Mail className="w-4 h-4 text-[var(--brand-ink)]" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-sm">Guarda tus boletas — entra con tu correo</p>
+            <p className="text-xs text-[var(--text-2)] mt-0.5 leading-relaxed">
+              Opcional. Te enviamos un enlace mágico para que tu historial te siga en
+              cualquier dispositivo. No necesitas contraseña.
+            </p>
+          </div>
+        </div>
+
+        {feedback?.ok ? (
+          <p className="mt-3 text-sm text-[var(--brand-ink)] flex items-center gap-1.5">
+            <Check className="w-4 h-4" /> Te enviamos un correo. Revisa tu bandeja y toca el enlace.
+          </p>
+        ) : (
+          <form onSubmit={onSubmit} className="mt-3 flex flex-col sm:flex-row gap-2">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="tu@correo.cl"
+              aria-label="Tu correo"
+              className="flex-1 h-11 px-4 rounded-full bg-[var(--fill)] border border-[var(--line)] text-sm outline-none focus:border-[var(--brand-ink)]"
+            />
+            <Button type="submit" loading={sending} disabled={sending}>
+              Enviar enlace
+            </Button>
+          </form>
+        )}
+
+        {feedback && !feedback.ok && (
+          <p className="mt-2 text-xs text-[#b45309]">{feedback.error}</p>
+        )}
+        {callbackError && (
+          <p className="mt-2 text-xs text-[#b45309]">
+            El enlace no se pudo validar (puede haber expirado). Pide uno nuevo.
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // ── Autenticado ──
+  const onLink = async () => {
+    setLinking(true)
+    const n = await linkSessionsToAccount(localSessionIds)
+    setLinking(false)
+    if (n !== null) {
+      setLinkedOk(true)
+      onLinked()
+      setTimeout(() => setLinkedOk(false), 2500)
+    }
+  }
+
+  const onSignOut = async () => {
+    await signOut()
+    router.refresh()
+    onLinked() // recarga la lista (se cae a solo locales)
+  }
+
+  return (
+    <div className="mb-6 bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-[var(--brand-bg)] flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4 text-[var(--brand-ink)]" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-sm truncate">{userEmail}</p>
+            <p className="text-xs text-[var(--text-2)]">
+              {accountOnlyCount > 0
+                ? `${accountOnlyCount} boleta${accountOnlyCount !== 1 ? 's' : ''} guardada${accountOnlyCount !== 1 ? 's' : ''} en tu cuenta`
+                : 'Tu cuenta está conectada'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onSignOut}
+          className="inline-flex items-center gap-1 text-xs text-[var(--text-2)] hover:text-[var(--text)] shrink-0"
+        >
+          <LogOut className="w-3.5 h-3.5" /> Salir
+        </button>
+      </div>
+
+      {localCount > 0 && (
+        <Button
+          variant="secondary"
+          fullWidth
+          className="mt-3"
+          onClick={onLink}
+          loading={linking}
+          disabled={linking || linkedOk}
+        >
+          {linkedOk ? (
+            <><Check className="w-4 h-4" /> Guardadas en tu cuenta</>
+          ) : (
+            <><CloudUpload className="w-4 h-4" /> Guardar estas boletas en mi cuenta</>
+          )}
+        </Button>
+      )}
     </div>
   )
 }
