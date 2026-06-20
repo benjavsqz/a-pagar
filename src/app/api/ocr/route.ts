@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { createClient } from '@/lib/supabase/server'
+
+// La cascada de modelos + reintentos puede tardar; evita que la función se
+// corte a los 10s por defecto en mitad de una llamada a Gemini.
+export const maxDuration = 30
 
 const PROMPT = `Analiza esta imagen de una boleta o ticket (chileno o latinoamericano).
 Tu objetivo es extraer TODOS los ítems de comida y bebida con sus precios.
@@ -160,7 +165,7 @@ const RATE_LIMIT = 10
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const requestLog = new Map<string, number[]>()
 
-function isRateLimited(ip: string): boolean {
+function isRateLimitedMemory(ip: string): boolean {
   const now = Date.now()
   const recent = (requestLog.get(ip) ?? []).filter(t => now - t < RATE_WINDOW_MS)
   if (recent.length >= RATE_LIMIT) {
@@ -178,6 +183,23 @@ function isRateLimited(ip: string): boolean {
   return false
 }
 
+// Rate-limit durable (global entre instancias) vía Supabase; cae al limitador en
+// memoria si la RPC no está disponible (DB caída o migración 013 sin aplicar).
+async function isRateLimited(ip: string): Promise<boolean> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc('hit_ocr_rate_limit', {
+      p_ip: ip,
+      p_limit: RATE_LIMIT,
+      p_window_seconds: Math.round(RATE_WINDOW_MS / 1000),
+    })
+    if (!error && typeof data === 'boolean') return data
+  } catch {
+    // sin red / RPC ausente → fallback
+  }
+  return isRateLimitedMemory(ip)
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GOOGLE_AI_API_KEY
   if (!apiKey) {
@@ -185,7 +207,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim()
-  if (isRateLimited(ip)) {
+  if (await isRateLimited(ip)) {
     return NextResponse.json(
       { error: '429: demasiadas solicitudes — espera unos minutos' },
       { status: 429 }
@@ -215,7 +237,9 @@ export async function POST(req: NextRequest) {
     try {
       parsed = JSON.parse(clean)
     } catch {
-      console.error('JSON parse error — raw:', clean)
+      // No logueamos el contenido crudo: una boleta puede traer nombre/RUT del
+      // local. Solo la longitud sirve para diagnóstico.
+      console.error('OCR JSON parse error — output length:', clean.length)
       return NextResponse.json(
         { error: `No se pudo interpretar la respuesta del modelo: ${clean.slice(0, 120)}` },
         { status: 502 }
@@ -231,11 +255,17 @@ export async function POST(req: NextRequest) {
     }
 
     const items: Array<{ name: string; price: string }> = []
-    for (const item of rawItems) {
-      if (!item.name?.trim() || typeof item.price !== 'number') continue
+    let droppedLowValue = 0
+    // Cap defensivo: una imagen adversaria no debería inflar el payload con
+    // cientos de ítems (maxOutputTokens ya lo acota; esto es cinturón y tirantes).
+    const MAX_ITEMS = 100
+    for (const item of rawItems.slice(0, MAX_ITEMS)) {
+      if (!item.name?.trim() || typeof item.price !== 'number' || item.price <= 0) continue
       const qty = Math.min(Math.max(1, item.quantity ?? 1), 20)
       const unitPrice = Math.round(item.price / qty)
-      if (unitPrice < 200) continue
+      // Ítems muy baratos suelen ser ruido de OCR (números sueltos mal leídos).
+      // Se descartan, pero lo contamos para informarlo y no "perder" plata en silencio.
+      if (unitPrice < 200) { droppedLowValue++; continue }
       for (let i = 0; i < qty; i++) {
         items.push({ name: item.name.trim(), price: unitPrice.toString() })
       }
@@ -252,6 +282,7 @@ export async function POST(req: NextRequest) {
       subtotal: detectedSubtotal,
       extractedTotal,
       mismatch,
+      droppedLowValue,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

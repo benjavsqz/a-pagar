@@ -24,7 +24,7 @@ function ClaimerAvatars({ people, divide }: { people: Participant[]; divide?: nu
         ))}
       </div>
       {divide && divide > 1 ? (
-        <span className="text-[11px] font-semibold text-[#6b5f55]">÷{divide}</span>
+        <span className="text-[11px] font-semibold text-[var(--text-2)]">÷{divide}</span>
       ) : null}
     </div>
   )
@@ -100,36 +100,36 @@ export function ItemsClaimList({
           return (
             <div
               key={name}
-              className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
-                isMine ? 'bg-[#0bb673]/10 border-[#0bb673]/40' : 'bg-white border-[#f6f1ea]'
+              className={`w-full text-left p-3.5 rounded-2xl border transition-[transform,background-color,border-color,color] ${
+                isMine ? 'bg-[#0bb673]/10 border-[#0bb673]/40' : 'bg-[var(--surface)] border-[var(--fill)]'
               }`}
             >
               <div className="flex items-center gap-3">
                 {isMine
-                  ? <CheckCircle2 className="w-5 h-5 text-[#077f4e] shrink-0 check-pop" />
-                  : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />}
+                  ? <CheckCircle2 className="w-5 h-5 text-[var(--brand-ink)] shrink-0 check-pop" />
+                  : <Circle className="w-5 h-5 text-[var(--text-2)] shrink-0" />}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>{name}</p>
+                  <p className={`text-sm font-medium truncate ${isMine ? 'text-[var(--text)]' : 'text-[var(--text-1)]'}`}>{name}</p>
                   <p className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[11px] font-semibold bg-[#ece2d5] text-[#6b5f55] px-1.5 py-0.5 rounded-full shrink-0">×{units.length}</span>
-                    <span className={`text-xs font-bold truncate ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>{formatCLP(unitPrice)} c/u</span>
+                    <span className="text-[11px] font-semibold bg-[var(--line)] text-[var(--text-2)] px-1.5 py-0.5 rounded-full shrink-0">×{units.length}</span>
+                    <span className={`text-xs font-bold truncate ${isMine ? 'text-[var(--brand-ink)]' : 'text-[var(--text-2)]'}`}>{formatCLP(unitPrice)} c/u</span>
                   </p>
                 </div>
-                <div className="flex items-center bg-[#f6f1ea] border border-[#ece2d5] rounded-lg shrink-0">
+                <div className="flex items-center bg-[var(--fill)] border border-[var(--line)] rounded-lg shrink-0">
                     <button
                       onClick={handleRemoveOne}
                       disabled={myCount === 0}
                       aria-label="Quitar uno"
-                      className="w-10 h-10 flex items-center justify-center text-[#6b5f55] hover:text-[#1a1614] disabled:opacity-20 transition-colors"
+                      className="w-10 h-10 flex items-center justify-center text-[var(--text-2)] hover:text-[var(--text)] disabled:opacity-20 transition-colors"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className={`w-5 text-center text-xs font-bold tabular-nums select-none ${myCount > 0 ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>{myCount}</span>
+                    <span className={`w-5 text-center text-xs font-bold tabular-nums select-none ${myCount > 0 ? 'text-[var(--brand-ink)]' : 'text-[var(--text-2)]'}`}>{myCount}</span>
                     <button
                       onClick={handleAdd}
                       disabled={freeCount === 0 || !open}
                       aria-label="Agregar uno"
-                      className="w-10 h-10 flex items-center justify-center text-[#6b5f55] hover:text-[#077f4e] disabled:opacity-20 transition-colors"
+                      className="w-10 h-10 flex items-center justify-center text-[var(--text-2)] hover:text-[var(--brand-ink)] disabled:opacity-20 transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -148,7 +148,7 @@ export function ItemsClaimList({
                     return (
                       <span
                         key={unit.id}
-                        className="text-xs px-2.5 py-1 rounded-full font-medium border border-dashed border-[#e0d4c4] text-[#6b5f55]"
+                        className="text-xs px-2.5 py-1 rounded-full font-medium border border-dashed border-[var(--line-2)] text-[var(--text-2)]"
                       >
                         Libre {idx + 1}
                       </span>
@@ -160,7 +160,7 @@ export function ItemsClaimList({
                     <span
                       key={unit.id}
                       className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border ${
-                        isMyUnit ? 'bg-[#0bb673]/12 border-[#0bb673]/35' : 'bg-white border-[var(--border)]'
+                        isMyUnit ? 'bg-[#0bb673]/12 border-[#0bb673]/35' : 'bg-[var(--surface)] border-[var(--border)]'
                       }`}
                     >
                       <span className="flex -space-x-1.5">
@@ -174,7 +174,7 @@ export function ItemsClaimList({
                           </span>
                         ))}
                       </span>
-                      <span className={`text-xs font-semibold leading-none ${isMyUnit ? 'text-[#0a6f47]' : 'text-[#4a423b]'}`}>
+                      <span className={`text-xs font-semibold leading-none ${isMyUnit ? 'text-[var(--brand-ink)]' : 'text-[var(--text-1)]'}`}>
                         {unitClaimers.map(p => (p.id === meId ? 'Tú' : p.name.split(' ')[0])).join(' + ')}
                       </span>
                     </span>
@@ -203,8 +203,8 @@ export function ItemsClaimList({
         return (
           <div
             key={item.id}
-            className={`w-full rounded-2xl border transition-all ${
-              isMine ? 'bg-[#0bb673]/10 border-[#0bb673]/40' : 'bg-white border-[#f6f1ea]'
+            className={`w-full rounded-2xl border transition-[transform,background-color,border-color,color] ${
+              isMine ? 'bg-[#0bb673]/10 border-[#0bb673]/40' : 'bg-[var(--surface)] border-[var(--fill)]'
             }`}
           >
             <div className="flex items-center gap-2 p-3.5">
@@ -217,10 +217,10 @@ export function ItemsClaimList({
                 className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-95 transition-transform disabled:active:scale-100"
               >
                 {isMine
-                  ? <CheckCircle2 className="w-5 h-5 text-[#077f4e] shrink-0 check-pop" />
-                  : <Circle className="w-5 h-5 text-[#6b5f55] shrink-0" />}
+                  ? <CheckCircle2 className="w-5 h-5 text-[var(--brand-ink)] shrink-0 check-pop" />
+                  : <Circle className="w-5 h-5 text-[var(--text-2)] shrink-0" />}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${isMine ? 'text-[#1a1614]' : 'text-[#4a423b]'}`}>{item.name}</p>
+                  <p className={`text-sm font-medium truncate ${isMine ? 'text-[var(--text)]' : 'text-[var(--text-1)]'}`}>{item.name}</p>
                   {/* Quién lo está marcando — visible para todos. Se oculta solo si
                       eres tú solo (el check verde ya lo indica). */}
                   {!(itemClaims.length === 1 && isMine) && (
@@ -229,18 +229,18 @@ export function ItemsClaimList({
                 </div>
               </button>
               <div className="text-right shrink-0">
-                <p className={`text-sm font-bold ${isMine ? 'text-[#077f4e]' : 'text-[#6b5f55]'}`}>{formatCLP(pricePer)}</p>
-                {shared && <p className="text-xs text-[#6b5f55]">de {formatCLP(item.price)}</p>}
+                <p className={`text-sm font-bold ${isMine ? 'text-[var(--brand-ink)]' : 'text-[var(--text-2)]'}`}>{formatCLP(pricePer)}</p>
+                {shared && <p className="text-xs text-[var(--text-2)]">de {formatCLP(item.price)}</p>}
               </div>
               {/* Botón Dividir — al costado */}
               <button
                 onClick={() => toggleSplit(item.id)}
                 aria-label="Dividir este ítem entre varias personas"
                 aria-pressed={splitView}
-                className={`shrink-0 h-9 px-2.5 rounded-xl flex items-center gap-1 border text-xs font-medium transition-all active:scale-90 ${
+                className={`shrink-0 h-9 px-2.5 rounded-xl flex items-center gap-1 border text-xs font-medium transition-[transform,background-color,border-color,color] active:scale-90 ${
                   splitView
-                    ? 'bg-[#0bb673]/15 border-[#0bb673]/40 text-[#077f4e]'
-                    : 'bg-[#f6f1ea] border-[#ece2d5] text-[#6b5f55] hover:text-[#1a1614]'
+                    ? 'bg-[#0bb673]/15 border-[#0bb673]/40 text-[var(--brand-ink)]'
+                    : 'bg-[var(--fill)] border-[var(--line)] text-[var(--text-2)] hover:text-[var(--text)]'
                 }`}
               >
                 <Split className="w-3.5 h-3.5" /> Dividir
@@ -269,7 +269,7 @@ export function ItemsClaimList({
                     ) : (
                       <span
                         key={p.id}
-                        className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#ece2d5] text-[#4a423b]"
+                        className="text-xs px-2.5 py-1 rounded-full font-medium bg-[var(--line)] text-[var(--text-1)]"
                       >
                         {firstName(p.id)} · {share}
                       </span>
@@ -278,13 +278,13 @@ export function ItemsClaimList({
                   {open && !isMine && (
                     <button
                       onClick={() => addClaim(item.id, meId)}
-                      className="text-xs px-2.5 py-1 rounded-full font-medium border border-dashed border-[#0bb673]/50 text-[#077f4e] hover:bg-[#0bb673]/5 transition-colors active:scale-95"
+                      className="text-xs px-2.5 py-1 rounded-full font-medium border border-dashed border-[#0bb673]/50 text-[var(--brand-ink)] hover:bg-[#0bb673]/5 transition-colors active:scale-95"
                     >
                       + Tomar mi parte
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] text-[#8a7d71] mt-1.5 ml-8">
+                <p className="text-[11px] text-[var(--text-3)] mt-1.5 ml-8">
                   Se reparte entre quienes lo tomen — ÷{Math.max(1, itemClaims.length)}
                 </p>
               </div>

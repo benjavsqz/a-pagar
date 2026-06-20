@@ -84,13 +84,56 @@ export function normalizePaymentLink(raw: string): string | null {
   return ok ? url.toString() : null
 }
 
-export function computeItemWithClaims(item: Item, claims: Claim[]): ItemWithClaims {
+/**
+ * Cuánto paga UN reclamante de un ítem, repartiendo el precio SIN perder ni crear
+ * pesos: la Σ de las partes de todos los reclamantes == item.price (conservación).
+ * Modelo "el host absorbe el resto":
+ *   - Si el host reclama el ítem, los invitados pagan ceil(price/N) y el host paga
+ *     el remanente exacto (price − Σ invitados). Su consumo no se cobra igual.
+ *   - Si no hay host entre los reclamantes, el resto (price mod N) se reparte de a
+ *     $1 entre los primeros (orden estable por created_at) para que cuadre exacto.
+ */
+export function claimShare(
+  item: Item,
+  itemClaims: Claim[],
+  participants: Participant[],
+  participantId: string,
+): number {
+  const n = itemClaims.length
+  if (n <= 1) return item.price
+
+  const ceilShare = Math.ceil(item.price / n)
+  const hostClaim = itemClaims.find(
+    c => participants.find(p => p.id === c.participant_id)?.is_host === true
+  )
+
+  if (hostClaim) {
+    // Invitados pagan ceil; el host absorbe lo que falte para cuadrar exacto.
+    return participantId === hostClaim.participant_id
+      ? item.price - ceilShare * (n - 1)
+      : ceilShare
+  }
+
+  // Solo invitados: reparte el resto de a $1 entre los primeros (orden estable).
+  const base = Math.floor(item.price / n)
+  const rem = item.price - base * n
+  const idx = [...itemClaims]
+    .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
+    .findIndex(c => c.participant_id === participantId)
+  return base + (idx > -1 && idx < rem ? 1 : 0)
+}
+
+export function computeItemWithClaims(
+  item: Item,
+  claims: Claim[],
+  participants: Participant[],
+  participantId: string,
+): ItemWithClaims {
   const itemClaims = claims.filter(c => c.item_id === item.id)
-  const count = itemClaims.length || 1
   return {
     ...item,
     claims: itemClaims,
-    price_per_person: Math.ceil(item.price / count),
+    price_per_person: claimShare(item, itemClaims, participants, participantId),
   }
 }
 
@@ -99,7 +142,8 @@ export function computeParticipantSummary(
   items: Item[],
   claims: Claim[],
   payments: Payment[],
-  propinaPct: number
+  propinaPct: number,
+  participants: Participant[],
 ): ParticipantSummary {
   const myClaimIds = new Set(
     claims.filter(c => c.participant_id === participant.id).map(c => c.item_id)
@@ -107,7 +151,7 @@ export function computeParticipantSummary(
 
   const myItems = items
     .filter(item => myClaimIds.has(item.id))
-    .map(item => computeItemWithClaims(item, claims))
+    .map(item => computeItemWithClaims(item, claims, participants, participant.id))
 
   const subtotal = myItems.reduce((sum, item) => sum + item.price_per_person, 0)
   const propina = Math.ceil(subtotal * propinaPct / 100)

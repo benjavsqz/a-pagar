@@ -30,12 +30,12 @@ export function PresenceBubbles({ people, max = 5 }: { people: PresenceUser[]; m
           </span>
         ))}
         {extra > 0 && (
-          <span className="w-7 h-7 rounded-full grid place-items-center text-[10px] font-bold text-[#6f6155] bg-[var(--surface-2)] ring-2 ring-white">
+          <span className="w-7 h-7 rounded-full grid place-items-center text-[10px] font-bold text-[var(--text-2)] bg-[var(--surface-2)] ring-2 ring-white">
             +{extra}
           </span>
         )}
       </div>
-      <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#6f6155]">
+      <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-2)]">
         <span className="w-1.5 h-1.5 rounded-full bg-[#0bb673] animate-pulse" />
         {label}
       </span>
@@ -66,7 +66,7 @@ export function ParticipantsLegend({
         return (
           <span
             key={p.id}
-            className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-white border border-[var(--border)] shadow-[0_1px_2px_rgba(120,80,50,0.05)]"
+            className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-[var(--surface)] border border-[var(--border)] shadow-[0_1px_2px_rgba(120,80,50,0.05)]"
           >
             <span
               className="w-5 h-5 rounded-full grid place-items-center text-[10px] font-bold text-white select-none"
@@ -74,7 +74,7 @@ export function ParticipantsLegend({
             >
               {initial(p.name)}
             </span>
-            <span className="text-xs font-semibold text-[#4a423b] leading-none">
+            <span className="text-xs font-semibold text-[var(--text-1)] leading-none">
               {firstName(p.name)}{isMe ? ' · tú' : ''}
             </span>
             {live && <span className="w-1.5 h-1.5 rounded-full bg-[#0bb673] animate-pulse" title="conectado" />}

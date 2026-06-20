@@ -43,7 +43,10 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    // 'default' (no 'black-translucent'): el tema es crema claro, así los
+    // glifos de la barra de estado se ven (en translucent quedaban blancos
+    // sobre crema = invisibles) y el contenido no se mete bajo el notch.
+    statusBarStyle: 'default',
     title: 'A-Pagar',
   },
   openGraph: {
@@ -62,15 +65,21 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#faf2e7',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#faf2e7' },
+    { media: '(prefers-color-scheme: dark)', color: '#17120f' },
+  ],
   width: 'device-width',
   initialScale: 1,
+  // Necesario para que env(safe-area-inset-*) tenga valores reales en PWA
+  // instalada (notch / Dynamic Island / home indicator).
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-CL" className={`h-full ${jakarta.variable} ${fraunces.variable} ${spaceMono.variable}`}>
-      <body className="min-h-full flex flex-col bg-[#faf2e7] text-[#1a1614] antialiased font-sans">
+      <body className="min-h-full flex flex-col bg-[var(--bg)] text-[var(--text)] antialiased font-sans pt-safe">
         <StructuredData />
         {children}
         <Toaster />

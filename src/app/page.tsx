@@ -23,7 +23,7 @@ export default function Home() {
           </div>
           <Link
             href="/cuenta"
-            className="text-sm font-semibold text-[#6f6155] hover:text-[#241a12] transition-colors"
+            className="text-sm font-semibold text-[var(--text-2)] hover:text-[var(--text)] transition-colors"
           >
             Mis boletas
           </Link>
@@ -34,9 +34,9 @@ export default function Home() {
           {/* Texto + CTA */}
           <div className="flex flex-col py-4 lg:py-0" style={{ animation: 'fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both' }}>
             <h1 className="font-display font-semibold text-[clamp(2.9rem,11vw,4.6rem)] leading-[0.98] tracking-[-0.03em]">
-              Divide la cuenta <em className="italic text-[#0a6f47]">sin drama</em>.
+              Divide la cuenta <em className="italic text-[var(--brand-ink)]">sin drama</em>.
             </h1>
-            <p className="text-[#6f6155] text-[clamp(1.05rem,2.4vw,1.2rem)] leading-relaxed max-w-[30ch] mt-5">
+            <p className="text-[var(--text-2)] text-[clamp(1.05rem,2.4vw,1.2rem)] leading-relaxed max-w-[30ch] mt-5">
               Foto de la boleta → link al grupo → cada uno marca lo suyo y paga.
             </p>
 
@@ -53,8 +53,8 @@ export default function Home() {
 
             <div className="flex items-center gap-x-5 gap-y-2 mt-7 flex-wrap">
               {['Gratis', 'Funciona por WhatsApp', 'Hecho en Chile'].map(t => (
-                <span key={t} className="flex items-center gap-1.5 text-[13px] font-semibold text-[#6f6155]">
-                  <Check className="w-4 h-4 text-[#0a6f47]" strokeWidth={2.6} /> {t}
+                <span key={t} className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text-2)]">
+                  <Check className="w-4 h-4 text-[var(--brand-ink)]" strokeWidth={2.6} /> {t}
                 </span>
               ))}
             </div>
@@ -72,42 +72,42 @@ export default function Home() {
 
           {/* Dos modos */}
           <div className="grid grid-cols-2 gap-3 lg:gap-4 stagger">
-            <div className="relative bg-white rounded-2xl p-5 shadow-[0_10px_30px_rgba(150,100,60,0.12)] overflow-hidden" style={{ ['--i' as string]: 1 }}>
+            <div className="relative bg-[var(--surface)] rounded-2xl p-5 shadow-[0_10px_30px_rgba(150,100,60,0.12)] overflow-hidden" style={{ ['--i' as string]: 1 }}>
               <span className="absolute top-0 inset-x-0 h-1 bg-[#0bb673]" />
-              <div className="w-10 h-10 rounded-xl bg-[#e7f9f0] flex items-center justify-center mb-3">
-                <ScanLine className="w-5 h-5 text-[#0a6f47]" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--brand-bg)] flex items-center justify-center mb-3">
+                <ScanLine className="w-5 h-5 text-[var(--brand-ink)]" />
               </div>
               <p className="font-display font-semibold text-lg leading-tight">Por ítems</p>
-              <p className="text-xs text-[#6f6155] mt-1 leading-snug">Cada uno marca lo que pidió. Ideal con pedidos distintos.</p>
+              <p className="text-xs text-[var(--text-2)] mt-1 leading-snug">Cada uno marca lo que pidió. Ideal con pedidos distintos.</p>
             </div>
-            <div className="relative bg-white rounded-2xl p-5 shadow-[0_10px_30px_rgba(150,100,60,0.12)] overflow-hidden" style={{ ['--i' as string]: 2 }}>
+            <div className="relative bg-[var(--surface)] rounded-2xl p-5 shadow-[0_10px_30px_rgba(150,100,60,0.12)] overflow-hidden" style={{ ['--i' as string]: 2 }}>
               <span className="absolute top-0 inset-x-0 h-1 bg-[#7c6cf0]" />
-              <div className="w-10 h-10 rounded-xl bg-[#ece9fd] flex items-center justify-center mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[var(--violet-bg)] flex items-center justify-center mb-3">
                 <Users className="w-5 h-5 text-[#7c6cf0]" />
               </div>
               <p className="font-display font-semibold text-lg leading-tight">Partes iguales</p>
-              <p className="text-xs text-[#6f6155] mt-1 leading-snug">Divide el total entre todos. Ideal si pidieron parecido.</p>
+              <p className="text-xs text-[var(--text-2)] mt-1 leading-snug">Divide el total entre todos. Ideal si pidieron parecido.</p>
             </div>
           </div>
 
           {/* Pasos — panel tonal plano (jerarquía vs cards blancas) */}
           <div className="surface-tonal rounded-[22px] px-2 mt-6">
             {[
-              { n: '01', icon: Camera,      label: 'Foto',      text: 'Saca foto a la boleta y la IA lee todo.',        bg: '#fef0e8', fg: 'var(--coral-ink)' },
-              { n: '02', icon: Share2,      label: 'Comparte',  text: 'Manda el link por WhatsApp al grupo.',          bg: '#e7f9f0', fg: 'var(--brand-ink)' },
-              { n: '03', icon: CircleCheck, label: 'Listo',     text: 'Cada uno marca lo que pidió y transfiere.',     bg: '#ece9fd', fg: '#7c6cf0' },
+              { n: '01', icon: Camera,      label: 'Foto',      text: 'Saca foto a la boleta y la IA lee todo.',        bg: 'var(--coral-soft)', fg: 'var(--coral-ink)' },
+              { n: '02', icon: Share2,      label: 'Comparte',  text: 'Manda el link por WhatsApp al grupo.',          bg: 'var(--brand-bg)', fg: 'var(--brand-ink)' },
+              { n: '03', icon: CircleCheck, label: 'Listo',     text: 'Cada uno marca lo que pidió y transfiere.',     bg: 'var(--violet-bg)', fg: 'var(--violet)' },
             ].map(({ n, icon: Icon, label, text, bg, fg }, i, arr) => (
               <div
                 key={label}
                 className={`flex items-center gap-4 px-3 py-4 ${i < arr.length - 1 ? 'border-b-2 border-dashed border-[var(--border)]' : ''}`}
               >
-                <span className="money text-[13px] font-bold text-[#9a8b7c] w-6 shrink-0">{n}</span>
+                <span className="money text-[13px] font-bold text-[var(--text-3)] w-6 shrink-0">{n}</span>
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: bg }}>
                   <Icon className="w-5 h-5" style={{ color: fg }} />
                 </div>
                 <div>
-                  <p className="text-[15px] font-bold text-[#241a12]">{label}</p>
-                  <p className="text-sm text-[#6f6155] leading-snug">{text}</p>
+                  <p className="text-[15px] font-bold text-[var(--text)]">{label}</p>
+                  <p className="text-sm text-[var(--text-2)] leading-snug">{text}</p>
                 </div>
               </div>
             ))}
@@ -122,10 +122,10 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="mt-auto pb-7 flex items-center justify-center gap-3 text-xs text-[#6f6155]">
+        <footer className="mt-auto pb-7 flex items-center justify-center gap-3 text-xs text-[var(--text-2)]">
           <span>© {new Date().getFullYear()} A-Pagar</span>
           <span aria-hidden>·</span>
-          <Link href="/privacidad" className="hover:text-[#241a12] transition-colors">
+          <Link href="/privacidad" className="hover:text-[var(--text)] transition-colors">
             Privacidad
           </Link>
         </footer>
@@ -143,18 +143,18 @@ function ReceiptMockup() {
   ]
 
   return (
-    <div className="receipt-edge bg-white rounded-3xl shadow-[0_26px_60px_rgba(140,90,50,0.20)]">
+    <div className="receipt-edge bg-[var(--surface)] rounded-3xl shadow-[0_26px_60px_rgba(140,90,50,0.20)]">
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[var(--coral-soft)] flex items-center justify-center">
             <ReceiptText className="w-5 h-5 text-[var(--coral-ink)]" />
           </div>
           <div>
-            <p className="text-[15px] font-extrabold tracking-tight text-[#241a12]">La Piojera</p>
+            <p className="text-[15px] font-extrabold tracking-tight text-[var(--text)]">La Piojera</p>
             <p className="meta mt-0.5">Mesa 4 · 4 amigos</p>
           </div>
         </div>
-        <span className="flex items-center gap-1.5 text-[11px] font-bold bg-[#e7f9f0] text-[#0a6f47] px-2.5 py-1 rounded-full">
+        <span className="flex items-center gap-1.5 text-[11px] font-bold bg-[var(--brand-bg)] text-[var(--brand-ink)] px-2.5 py-1 rounded-full">
           <span className="w-1.5 h-1.5 rounded-full bg-[#0bb673] animate-pulse" />
           Activa
         </span>
@@ -180,17 +180,17 @@ function ReceiptMockup() {
                   </svg>
                 )}
               </div>
-              <span className={`text-[13.5px] truncate ${item.mine ? 'text-[#241a12] font-bold' : 'text-[#4a423b]'}`}>
+              <span className={`text-[13.5px] truncate ${item.mine ? 'text-[var(--text)] font-bold' : 'text-[var(--text-1)]'}`}>
                 {item.name}
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {!item.mine && (
-                <span className="text-[10px] text-[#6f6155] bg-white px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-[10px] text-[var(--text-2)] bg-[var(--surface)] px-2 py-0.5 rounded-full font-semibold">
                   {item.person}
                 </span>
               )}
-              <span className={`money text-[13px] font-bold ${item.mine ? 'text-[#0a6f47]' : 'text-[#6f6155]'}`}>
+              <span className={`money text-[13px] font-bold ${item.mine ? 'text-[var(--brand-ink)]' : 'text-[var(--text-2)]'}`}>
                 {item.price}
               </span>
             </div>
@@ -198,12 +198,12 @@ function ReceiptMockup() {
         ))}
       </div>
 
-      <div className="mx-3 mb-4 rounded-2xl px-4 py-4 flex items-center justify-between bg-gradient-to-br from-[#073d27] to-[#0a6f47] shadow-[0_12px_26px_rgba(11,182,115,0.30)]">
+      <div className="mx-3 mb-4 rounded-2xl px-4 py-4 flex items-center justify-between bg-gradient-to-br from-[#073d27] to-[var(--brand-ink)] shadow-[0_12px_26px_rgba(11,182,115,0.30)]">
         <div>
           <p className="meta text-white/80">Tu parte</p>
           <p className="money text-[27px] font-bold text-white mt-0.5">$15.400</p>
         </div>
-        <div className="bg-white text-[#0a6f47] text-xs font-bold px-4 py-2 rounded-full">
+        <div className="bg-[var(--surface)] text-[var(--brand-ink)] text-xs font-bold px-4 py-2 rounded-full">
           Pagar →
         </div>
       </div>

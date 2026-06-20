@@ -140,12 +140,12 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
   // El diff en useSession.load() ya evita re-render salvo cambios reales, así que
   // estos cálculos no corren en cada tick del poll (solo cuando algo cambió).
   const summaries = guests.map(p =>
-    computeParticipantSummary(p, items, claims, payments, session.propina_pct)
+    computeParticipantSummary(p, items, claims, payments, session.propina_pct, participants)
   )
 
   // Lo que el propio host marcó (para resumen "tu consumo no se cobra")
   const hostSummary = hostParticipant
-    ? computeParticipantSummary(hostParticipant, items, claims, payments, session.propina_pct)
+    ? computeParticipantSummary(hostParticipant, items, claims, payments, session.propina_pct, participants)
     : null
 
   // Recordatorio al grupo: lista de quienes aún no transfieren + montos + link.
@@ -224,31 +224,31 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
           <Link
             href="/cuenta"
             aria-label="Volver a mis boletas"
-            className="p-2 -ml-2 hover:bg-[#f6f1ea] rounded-xl transition-colors text-[#6b5f55] hover:text-[#1a1614]"
+            className="p-2 -ml-2 hover:bg-[var(--fill)] rounded-xl transition-colors text-[var(--text-2)] hover:text-[var(--text)]"
           >
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <LogoMark className="w-7 h-7" />
-          <span className="text-xl font-black tracking-tight text-[#077f4e]">A-Pagar</span>
+          <span className="text-xl font-black tracking-tight text-[var(--brand-ink)]">A-Pagar</span>
           <span className={`text-xs px-2 py-0.5 rounded-full border ml-1 ${
             session.status === 'open'
-              ? 'bg-[#0bb673]/10 text-[#077f4e] border-[#0bb673]/20'
-              : 'bg-[#f6f1ea] text-[#6b5f55] border-[#e0d4c4]'
+              ? 'bg-[#0bb673]/10 text-[var(--brand-ink)] border-[#0bb673]/20'
+              : 'bg-[var(--fill)] text-[var(--text-2)] border-[var(--line-2)]'
           }`}>
             {session.status === 'open' ? 'Activa' : 'Cerrada'}
           </span>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isEqual ? 'bg-[#eeebfd]' : 'bg-[#e7f9f0]'}`}>
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isEqual ? 'bg-[var(--violet-bg)]' : 'bg-[var(--brand-bg)]'}`}>
             {isEqual
-              ? <Users className="w-4 h-4 text-[#5b4dc7]" />
-              : <Utensils className="w-4 h-4 text-[#077f4e]" />
+              ? <Users className="w-4 h-4 text-[var(--violet-ink)]" />
+              : <Utensils className="w-4 h-4 text-[var(--brand-ink)]" />
             }
           </div>
           <h1 className="font-display text-2xl font-bold">{session.restaurant_name ?? 'Sin nombre'}</h1>
         </div>
-        <p className="text-sm text-[#6b5f55] mt-0.5">
+        <p className="text-sm text-[var(--text-2)] mt-0.5">
           {guests.length} participante{guests.length !== 1 ? 's' : ''} ·{' '}
           {confirmedCount} pagado{confirmedCount !== 1 ? 's' : ''} ·{' '}
           {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
@@ -270,13 +270,13 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
         <div className="bg-[#7c6cf0]/10 border border-[#7c6cf0]/25 rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-[#5b4dc7] font-medium">Cada persona paga</p>
-              <p className="money text-2xl font-black text-[#1a1614]">{formatCLP(sharePerPerson)}</p>
+              <p className="text-xs text-[var(--violet-ink)] font-medium">Cada persona paga</p>
+              <p className="money text-2xl font-black text-[var(--text)]">{formatCLP(sharePerPerson)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-[#6b5f55]">Total boleta</p>
-              <p className="money text-sm font-bold text-[#4a423b]">{formatCLP(session.split_total ?? 0)}</p>
-              <p className="text-xs text-[#6b5f55]">÷ {session.split_n} personas</p>
+              <p className="text-xs text-[var(--text-2)]">Total boleta</p>
+              <p className="money text-sm font-bold text-[var(--text-1)]">{formatCLP(session.split_total ?? 0)}</p>
+              <p className="text-xs text-[var(--text-2)]">÷ {session.split_n} personas</p>
             </div>
           </div>
         </div>
@@ -287,17 +287,17 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Cobrado</span>
           <span className="money text-sm font-bold">
-            <span className="text-[#077f4e]">{formatCLP(confirmedAmount)}</span>
-            <span className="text-[#6b5f55] font-normal"> / {formatCLP(targetToCollect)}</span>
+            <span className="text-[var(--brand-ink)]">{formatCLP(confirmedAmount)}</span>
+            <span className="text-[var(--text-2)] font-normal"> / {formatCLP(targetToCollect)}</span>
           </span>
         </div>
-        <div className="h-2 bg-[#f6f1ea] rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--fill)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#0bb673] to-[#0cc47c] rounded-full transition-all duration-700"
+            className="h-full bg-gradient-to-r from-[#0bb673] to-[#0cc47c] rounded-full transition-[width] duration-700"
             style={{ width: `${progressPct}%` }}
           />
         </div>
-        <p className="text-xs text-[#6b5f55]">
+        <p className="text-xs text-[var(--text-2)]">
           {progressPct}% recaudado · {confirmedCount} confirmado{confirmedCount !== 1 ? 's' : ''}
         </p>
       </Card>
@@ -311,7 +311,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
               <p className="text-sm font-bold text-[var(--coral-ink)]">
                 {formatCLP(unclaimedTotal)} sin asignar
               </p>
-              <p className="text-xs text-[#6b5f55] mt-0.5 leading-snug">
+              <p className="text-xs text-[var(--text-2)] mt-0.5 leading-snug">
                 {unclaimedItems.length} ítem{unclaimedItems.length !== 1 ? 's' : ''} que nadie marcó. Si nadie los toma, esa plata no se cobra y la pones tú. Recuérdaselo al grupo o márcalos en “Lo que consumí yo”.
               </p>
             </div>
@@ -321,17 +321,17 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Share link */}
       <Card className="p-4 space-y-3">
-        <p className="text-sm text-[#6b5f55]">Comparte el link con los demás</p>
-        <div className="flex items-center gap-2 bg-[#ffffff] border border-[#ece2d5] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-xl px-3 py-2">
-          <ExternalLink className="w-4 h-4 text-[#6b5f55] shrink-0" />
-          <span className="text-xs text-[#6b5f55] flex-1 truncate">{link}</span>
+        <p className="text-sm text-[var(--text-2)]">Comparte el link con los demás</p>
+        <div className="flex items-center gap-2 bg-[var(--surface)] border border-[var(--line)] shadow-[0_6px_18px_rgba(150,100,60,0.07)] rounded-xl px-3 py-2">
+          <ExternalLink className="w-4 h-4 text-[var(--text-2)] shrink-0" />
+          <span className="text-xs text-[var(--text-2)] flex-1 truncate">{link}</span>
         </div>
         <div className="flex gap-2">
           <Button
             variant="secondary"
             size="sm"
             onClick={handleCopyLink}
-            className={`flex-1 transition-colors ${copiedLink ? 'text-[#077f4e] border-[#0bb673]/30' : ''}`}
+            className={`flex-1 transition-colors ${copiedLink ? 'text-[var(--brand-ink)] border-[#0bb673]/30' : ''}`}
           >
             <Copy className="w-4 h-4" /> {copiedLink ? 'Copiado ✓' : 'Copiar'}
           </Button>
@@ -348,25 +348,25 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
             onClick={() => setShowMyItems(v => !v)}
             className="w-full p-4 flex items-center gap-3 text-left"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#e7f9f0] flex items-center justify-center shrink-0">
-              <Utensils className="w-4 h-4 text-[#077f4e]" />
+            <div className="w-9 h-9 rounded-xl bg-[var(--brand-bg)] flex items-center justify-center shrink-0">
+              <Utensils className="w-4 h-4 text-[var(--brand-ink)]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm">Lo que consumí yo</p>
-              <p className="text-xs text-[#6b5f55] truncate">
+              <p className="text-xs text-[var(--text-2)] truncate">
                 {hostSummary && hostSummary.items.length > 0
                   ? `${hostSummary.items.length} ítem${hostSummary.items.length !== 1 ? 's' : ''} · ${formatCLP(hostSummary.total)} — no se te cobra`
                   : 'Marca tus platos para repartir bien los compartidos'}
               </p>
             </div>
             {showMyItems
-              ? <ChevronUp className="w-4 h-4 text-[#6b5f55] shrink-0" />
-              : <ChevronDown className="w-4 h-4 text-[#6b5f55] shrink-0" />}
+              ? <ChevronUp className="w-4 h-4 text-[var(--text-2)] shrink-0" />
+              : <ChevronDown className="w-4 h-4 text-[var(--text-2)] shrink-0" />}
           </button>
           {showMyItems && (
-            <div className="px-4 pb-4 border-t border-[#f6f1ea] pt-3">
+            <div className="px-4 pb-4 border-t border-[var(--fill)] pt-3">
               {items.length === 0 ? (
-                <p className="text-xs text-[#6b5f55]">No hay ítems en esta boleta.</p>
+                <p className="text-xs text-[var(--text-2)]">No hay ítems en esta boleta.</p>
               ) : (
                 <ItemsClaimList
                   items={items}
@@ -389,7 +389,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
       {/* Participants */}
       {guests.length === 0 ? (
         <Card className="p-7 text-center flex flex-col items-center gap-3">
-          <p className="text-[#6b5f55] text-sm">Aún no se une nadie. Comparte el link para empezar 👇</p>
+          <p className="text-[var(--text-2)] text-sm">Aún no se une nadie. Comparte el link para empezar 👇</p>
           <div className="flex flex-col gap-2 w-full max-w-[260px]">
             <Button fullWidth onClick={handleShareWhatsApp}>
               <Share2 className="w-4 h-4" /> Compartir por WhatsApp
@@ -398,11 +398,11 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
               <Copy className="w-4 h-4" /> {copiedLink ? '¡Link copiado!' : 'Copiar link'}
             </Button>
           </div>
-          <p className="text-xs text-[#6b5f55]">Esta pantalla se actualiza sola cuando alguien entra.</p>
+          <p className="text-xs text-[var(--text-2)]">Esta pantalla se actualiza sola cuando alguien entra.</p>
         </Card>
       ) : (
         <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-[#6b5f55] uppercase tracking-wider">Participantes</h2>
+          <h2 className="text-xs font-semibold text-[var(--text-2)] uppercase tracking-wider">Participantes</h2>
           <div className="space-y-3 stagger">
           {isEqual
             ? guests.map(p => {
@@ -444,18 +444,18 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
       {!isEqual && (
         <Card variant="tonal" className="p-4">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-[#6b5f55]">Subtotal boleta</span>
+            <span className="text-sm text-[var(--text-2)]">Subtotal boleta</span>
             <span className="font-medium">{formatCLP(billSubtotal)}</span>
           </div>
           {session.propina_pct > 0 && (
             <div className="flex justify-between items-center mt-1">
-              <span className="text-sm text-[#6b5f55]">+ Propina {session.propina_pct}%</span>
-              <span className="text-sm text-[#6b5f55]">{formatCLP(billTotal - billSubtotal)}</span>
+              <span className="text-sm text-[var(--text-2)]">+ Propina {session.propina_pct}%</span>
+              <span className="text-sm text-[var(--text-2)]">{formatCLP(billTotal - billSubtotal)}</span>
             </div>
           )}
-          <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#f6f1ea]">
+          <div className="flex justify-between items-center mt-2 pt-2 border-t border-[var(--fill)]">
             <span className="text-sm font-semibold">Total</span>
-            <span className="font-bold text-[#077f4e]">{formatCLP(billTotal)}</span>
+            <span className="font-bold text-[var(--brand-ink)]">{formatCLP(billTotal)}</span>
           </div>
         </Card>
       )}
@@ -513,14 +513,14 @@ function EqualParticipantCard({
   const isPaid = !!payment
   const isConfirmed = payment?.confirmed_by_host ?? false
 
-  const statusColor = isConfirmed ? 'text-[#077f4e]' : isPaid ? 'text-[#b45309]' : 'text-[#6b5f55]'
+  const statusColor = isConfirmed ? 'text-[var(--brand-ink)]' : isPaid ? 'text-[#b45309]' : 'text-[var(--text-2)]'
   const StatusIcon = isConfirmed ? CheckCircle2 : isPaid ? Clock : Clock
   const statusLabel = isConfirmed ? 'Pagado ✓' : isPaid ? 'Transferido — confirmar' : 'Pendiente'
 
   return (
     <Card className="overflow-hidden">
       <button className="w-full p-4 flex items-center gap-3 text-left" onClick={onToggle}>
-        <div className="w-9 h-9 rounded-full bg-[#e7f9f0] text-[#077f4e] flex items-center justify-center font-bold text-sm shrink-0">
+        <div className="w-9 h-9 rounded-full bg-[var(--brand-bg)] text-[var(--brand-ink)] flex items-center justify-center font-bold text-sm shrink-0">
           {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
@@ -528,19 +528,19 @@ function EqualParticipantCard({
             <span className="font-medium">{name}</span>
             <StatusIcon className={`w-4 h-4 ${statusColor}`} />
           </div>
-          <p className="text-xs text-[#6b5f55] truncate">{statusLabel}</p>
+          <p className="text-xs text-[var(--text-2)] truncate">{statusLabel}</p>
         </div>
         <div className="text-right shrink-0 flex flex-col items-end">
           <p className="money font-bold text-sm">{formatCLP(amount)}</p>
-          {expanded ? <ChevronUp className="w-4 h-4 text-[#6b5f55]" /> : <ChevronDown className="w-4 h-4 text-[#6b5f55]" />}
+          {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-2)]" /> : <ChevronDown className="w-4 h-4 text-[var(--text-2)]" />}
         </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-[#f6f1ea] pt-3 space-y-2">
+        <div className="px-4 pb-4 border-t border-[var(--fill)] pt-3 space-y-2">
           <div className="flex justify-between font-bold text-sm">
             <span>Su parte</span>
-            <span className="text-[#077f4e]">{formatCLP(amount)}</span>
+            <span className="text-[var(--brand-ink)]">{formatCLP(amount)}</span>
           </div>
           {payment?.comprobante_url && (
             <ComprobanteLink value={payment.comprobante_url} sessionId={sessionId} />
@@ -551,7 +551,7 @@ function EqualParticipantCard({
             </Button>
           )}
           {isConfirmed && (
-            <div className="flex items-center gap-2 text-[#077f4e] text-sm mt-2">
+            <div className="flex items-center gap-2 text-[var(--brand-ink)] text-sm mt-2">
               <CheckCircle2 className="w-4 h-4" /> Pago confirmado
             </div>
           )}
@@ -579,7 +579,7 @@ function ParticipantCard({
   const isPaid = !!payment
   const isConfirmed = payment?.confirmed_by_host ?? false
 
-  const statusColor = isConfirmed ? 'text-[#077f4e]' : isPaid ? 'text-[#b45309]' : 'text-[#6b5f55]'
+  const statusColor = isConfirmed ? 'text-[var(--brand-ink)]' : isPaid ? 'text-[#b45309]' : 'text-[var(--text-2)]'
   const StatusIcon = isConfirmed ? CheckCircle2 : isPaid ? Clock : hasMarked ? AlertCircle : Clock
   const statusLabel = isConfirmed
     ? 'Pagado ✓'
@@ -592,7 +592,7 @@ function ParticipantCard({
   return (
     <Card className="overflow-hidden">
       <button className="w-full p-4 flex items-center gap-3 text-left" onClick={onToggle}>
-        <div className="w-9 h-9 rounded-full bg-[#e7f9f0] text-[#077f4e] flex items-center justify-center font-bold text-sm shrink-0">
+        <div className="w-9 h-9 rounded-full bg-[var(--brand-bg)] text-[var(--brand-ink)] flex items-center justify-center font-bold text-sm shrink-0">
           {participant.name.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
@@ -600,38 +600,38 @@ function ParticipantCard({
             <span className="font-medium">{participant.name}</span>
             <StatusIcon className={`w-4 h-4 ${statusColor}`} />
           </div>
-          <p className="text-xs text-[#6b5f55] truncate">{statusLabel}</p>
+          <p className="text-xs text-[var(--text-2)] truncate">{statusLabel}</p>
         </div>
         <div className="text-right shrink-0 flex flex-col items-end">
           <p className="money font-bold text-sm">{formatCLP(total)}</p>
-          {expanded ? <ChevronUp className="w-4 h-4 text-[#6b5f55]" /> : <ChevronDown className="w-4 h-4 text-[#6b5f55]" />}
+          {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-2)]" /> : <ChevronDown className="w-4 h-4 text-[var(--text-2)]" />}
         </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-[#f6f1ea] pt-3 space-y-2">
+        <div className="px-4 pb-4 border-t border-[var(--fill)] pt-3 space-y-2">
           {items.length === 0 ? (
-            <p className="text-xs text-[#6b5f55]">No ha marcado nada aún.</p>
+            <p className="text-xs text-[var(--text-2)]">No ha marcado nada aún.</p>
           ) : (
             items.map(item => (
               <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-[#4a423b]">{item.name}</span>
-                <span className="text-[#6b5f55]">
+                <span className="text-[var(--text-1)]">{item.name}</span>
+                <span className="text-[var(--text-2)]">
                   {formatCLP(item.price_per_person)}
-                  {item.claims.length > 1 && <span className="text-xs text-[#6b5f55] ml-1">÷{item.claims.length}</span>}
+                  {item.claims.length > 1 && <span className="text-xs text-[var(--text-2)] ml-1">÷{item.claims.length}</span>}
                 </span>
               </div>
             ))
           )}
           {propinaPct > 0 && items.length > 0 && (
-            <div className="flex justify-between text-sm border-t border-[#f6f1ea] pt-2 text-[#6b5f55]">
+            <div className="flex justify-between text-sm border-t border-[var(--fill)] pt-2 text-[var(--text-2)]">
               <span>Propina {propinaPct}%</span>
               <span>{formatCLP(summary.propina)}</span>
             </div>
           )}
           <div className="flex justify-between font-bold text-sm">
             <span>Total</span>
-            <span className="text-[#077f4e]">{formatCLP(total)}</span>
+            <span className="text-[var(--brand-ink)]">{formatCLP(total)}</span>
           </div>
           {payment?.comprobante_url && (
             <div className="mt-2">
@@ -644,7 +644,7 @@ function ParticipantCard({
             </Button>
           )}
           {isConfirmed && (
-            <div className="flex items-center gap-2 text-[#077f4e] text-sm mt-2">
+            <div className="flex items-center gap-2 text-[var(--brand-ink)] text-sm mt-2">
               <CheckCircle2 className="w-4 h-4" /> Pago confirmado
             </div>
           )}
@@ -657,7 +657,7 @@ function ParticipantCard({
 function LoadingScreen() {
   return (
     <div className="min-h-dvh flex items-center justify-center">
-      <Loader2 className="w-8 h-8 text-[#077f4e] animate-spin" />
+      <Loader2 className="w-8 h-8 text-[var(--brand-ink)] animate-spin" />
     </div>
   )
 }
@@ -667,7 +667,7 @@ function ErrorScreen({ message }: { message: string }) {
     <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4 text-center">
       <AlertCircle className="w-10 h-10 text-[#e5484d]" />
       <p className="font-medium">{message}</p>
-      <Link href="/" className="text-sm text-[#6b5f55] hover:text-[#1a1614] transition-colors">← Volver al inicio</Link>
+      <Link href="/" className="text-sm text-[var(--text-2)] hover:text-[var(--text)] transition-colors">← Volver al inicio</Link>
     </div>
   )
 }
