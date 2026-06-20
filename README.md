@@ -1,5 +1,7 @@
 # A-Pagar 💸
 
+[![CI](https://github.com/benjavsqz/a-pagar/actions/workflows/ci.yml/badge.svg)](https://github.com/benjavsqz/a-pagar/actions/workflows/ci.yml)
+
 App web chilena para dividir la cuenta del restaurante sin caos: el anfitrión saca una foto de la boleta, la IA extrae los ítems, comparte un link por WhatsApp y cada persona marca lo que pidió y transfiere su parte.
 
 **Sin registro, sin app store, sin fricción.** Funciona como PWA instalable.

@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: Lint, types & unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit tests (vitest)
+        run: npm run test
+
+  # ---------------------------------------------------------------------------
+  # OPTIONAL: End-to-end tests (Playwright) — DISABLED BY DEFAULT
+  # ---------------------------------------------------------------------------
+  # This job is intentionally NOT run in CI. The e2e suite (`npm run test:e2e`)
+  # requires a real environment that this workflow does not provide:
+  #
+  #   1. Playwright browsers must be installed:  npx playwright install --with-deps
+  #   2. A reachable Supabase project (Postgres + RLS + storage + realtime).
+  #   3. Repository secrets for the env vars the app needs, e.g.:
+  #        - NEXT_PUBLIC_SUPABASE_URL
+  #        - NEXT_PUBLIC_SUPABASE_ANON_KEY
+  #        - GOOGLE_AI_API_KEY
+  #        - NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT
+  #
+  # To enable: remove the `if: false` guard below, add the secrets under
+  # Settings → Secrets and variables → Actions, and wire them into the `env:`
+  # block (and start the app / point at a test Supabase instance as needed).
+  #
+  # e2e:
+  #   name: E2E tests (Playwright)
+  #   runs-on: ubuntu-latest
+  #   if: false # <-- remove this line to enable, once secrets are configured
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: 'npm'
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Install Playwright browsers
+  #       run: npx playwright install --with-deps
+  #
+  #     - name: Run e2e tests
+  #       run: npm run test:e2e
+  #       env:
+  #         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  #         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  #         GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+  #         NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+  #         VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+  #         VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
