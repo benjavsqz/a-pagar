@@ -11,6 +11,7 @@ import { HostDataForm } from '@/components/session/host-data-form'
 import { StepIndicator } from '@/components/session/step-indicator'
 import { formatCLP, isValidRut, normalizePaymentLink } from '@/lib/utils'
 import { saveLocalSession } from '@/lib/local-sessions'
+import { trackEvent } from '@/lib/analytics'
 import {
   Plus, ArrowRight, ChevronLeft, ChevronDown, ChevronUp,
   ScanLine, Users, RefreshCw, Loader2,
@@ -246,6 +247,7 @@ export default function CrearPage() {
         hostParticipantId,
       })
 
+      trackEvent('session_created', { mode: 'items' })
       router.push(`/host/${session.id}`)
     } catch (err) {
       console.error('handleCreateItems error:', err)
@@ -313,6 +315,7 @@ export default function CrearPage() {
         hostToken,
       })
 
+      trackEvent('session_created', { mode: 'equal' })
       router.push(`/host/${session.id}`)
     } catch (err) {
       console.error('handleCreateEqual error:', err)
