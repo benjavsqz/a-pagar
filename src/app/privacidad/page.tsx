@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Privacidad — A-Pagar',
-  description: 'Qué datos maneja A-Pagar, para qué, y cuáles son tus derechos.',
+  description: 'Qué datos maneja A-Pagar, para qué, dónde se guardan y cuáles son tus derechos.',
 }
 
 export default function PrivacidadPage() {
@@ -29,74 +29,132 @@ export default function PrivacidadPage() {
         </header>
 
         <section className="space-y-2">
-          <h2 className="font-bold text-[var(--text)]">Qué datos guardamos</h2>
+          <h2 className="font-bold text-[var(--text)]">Sin cuentas, sin registro</h2>
           <p>
-            A-Pagar funciona sin cuentas ni registro. Para que la división de la boleta
-            funcione, guardamos solo lo que ingresas al usar la app:
+            A-Pagar funciona <strong className="text-[var(--text-1)]">sin cuentas ni contraseñas</strong>. No
+            te pedimos email para entrar, no creamos un perfil tuyo y no te seguimos entre boletas.
+            Cada boleta vive detrás de un link privado y el historial de tus boletas se guarda solo en
+            <strong className="text-[var(--text-1)]"> este dispositivo</strong> (ver más abajo).
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="font-bold text-[var(--text)]">Qué datos guardamos y para qué</h2>
+          <p>
+            Guardamos únicamente lo que ingresas para que la división de la boleta funcione:
           </p>
           <ul className="list-disc pl-5 space-y-1 text-[var(--text-2)]">
-            <li>El nombre que escribes al crear o unirte a una boleta.</li>
-            <li>Los ítems y montos de la boleta.</li>
-            <li>Los datos de transferencia que el anfitrión decide compartir con su grupo (nombre, banco, número de cuenta, RUT, correo y link de pago, si los ingresa).</li>
-            <li>Los comprobantes de transferencia que los participantes suben voluntariamente.</li>
-            <li>Si activas las notificaciones, los datos técnicos de tu suscripción push (identificador del navegador/dispositivo) para poder avisarte de pagos.</li>
-            <li>La foto de la boleta que subes para el escaneo; puede contener datos del local (nombre, RUT del comercio) además de los ítems.</li>
+            <li><strong className="text-[var(--text-1)]">Anfitrión:</strong> el nombre y los datos de transferencia que decide compartir con su grupo — nombre, RUT, banco, número de cuenta, correo y link de pago (solo los que ingresa). Sirven para que el grupo sepa a quién y cómo pagar.</li>
+            <li><strong className="text-[var(--text-1)]">Participantes:</strong> el nombre que escribes al unirte. Sirve para identificar quién consumió qué y quién ya pagó.</li>
+            <li><strong className="text-[var(--text-1)]">Boleta:</strong> los ítems, montos y propina. Son la base del cálculo de lo que le toca a cada persona.</li>
+            <li><strong className="text-[var(--text-1)]">Comprobantes:</strong> las imágenes de transferencia que los participantes suben voluntariamente, para que el anfitrión confirme los pagos.</li>
+            <li><strong className="text-[var(--text-1)]">Foto de la boleta:</strong> si usas el escaneo, la foto puede contener datos del local (nombre, RUT del comercio) además de los ítems.</li>
+            <li><strong className="text-[var(--text-1)]">Notificaciones push (opcional):</strong> si las activas, guardamos el identificador técnico de tu suscripción del navegador/dispositivo para poder avisarte de pagos.</li>
+          </ul>
+          <p className="text-[var(--text-2)]">
+            Usamos estos datos <strong className="text-[var(--text-1)]">solo</strong> para mostrar la boleta al
+            grupo, calcular lo que le toca a cada persona y permitir que el anfitrión confirme los pagos.
+            No vendemos ni cedemos estos datos a terceros con fines comerciales ni de publicidad.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="font-bold text-[var(--text)]">Dónde se guardan</h2>
+          <ul className="list-disc pl-5 space-y-1 text-[var(--text-2)]">
+            <li>
+              <strong className="text-[var(--text-1)]">En Supabase</strong> (base de datos y almacenamiento):
+              las boletas, ítems, participantes, pagos y comprobantes. Los comprobantes viven en un
+              <strong className="text-[var(--text-1)]"> bucket privado</strong> y se acceden mediante enlaces
+              temporales, no públicos.
+            </li>
+            <li>
+              <strong className="text-[var(--text-1)]">En este dispositivo</strong> (almacenamiento local del
+              navegador, <code className="text-[var(--text-1)]">localStorage</code>): el historial de tus
+              boletas y, si eres anfitrión, el código secreto que te deja confirmar pagos y cerrar la boleta.
+              Esto <strong className="text-[var(--text-1)]">no se sincroniza</strong>: si cambias de teléfono,
+              navegas en incógnito o borras los datos del navegador, ese historial desaparece de tu vista.
+            </li>
           </ul>
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-bold text-[var(--text)]">Para qué se usan</h2>
+          <h2 className="font-bold text-[var(--text)]">Quién puede ver la boleta</h2>
           <p>
-            Exclusivamente para mostrar la boleta al grupo, calcular lo que le toca a cada
-            persona y permitir que el anfitrión confirme los pagos. No vendemos ni compartimos
-            estos datos con terceros con fines comerciales.
+            Las boletas se comparten mediante un link privado. Cualquier persona que tenga el link puede ver
+            la boleta, los nombres de los participantes y los datos de transferencia del anfitrión.
+            <strong className="text-[var(--text-1)]"> Comparte el link solo con tu grupo.</strong>
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-bold text-[var(--text)]">Quién puede verlos</h2>
-          <p>
-            Las boletas se comparten mediante un link privado. Cualquier persona que tenga el
-            link puede ver la boleta, los nombres de los participantes y los datos de
-            transferencia del anfitrión. Comparte el link solo con tu grupo. Los comprobantes
-            se almacenan en un bucket privado y se acceden mediante enlaces temporales.
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-bold text-[var(--text)]">Servicios de terceros y transferencias internacionales</h2>
+          <h2 className="font-bold text-[var(--text)]">Servicios de terceros</h2>
           <p className="text-[var(--text-2)]">
             Algunos proveedores procesan datos fuera de Chile (principalmente en EE. UU.):
           </p>
           <ul className="list-disc pl-5 space-y-1 text-[var(--text-2)]">
             <li><strong className="text-[var(--text-1)]">Supabase</strong> — base de datos y almacenamiento de comprobantes.</li>
-            <li><strong className="text-[var(--text-1)]">Google Gemini</strong> — la foto de la boleta se envía a Google (EE. UU.) para extraer los ítems.</li>
+            <li><strong className="text-[var(--text-1)]">Google Gemini</strong> — si escaneas una foto, esta se envía a Google (EE. UU.) para extraer los ítems.</li>
             <li><strong className="text-[var(--text-1)]">Vercel</strong> — hosting (EE. UU.) y métricas de uso anónimas (sin cookies de seguimiento).</li>
           </ul>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-bold text-[var(--text)]">Cuánto tiempo se conservan</h2>
+          <ul className="list-disc pl-5 space-y-1 text-[var(--text-2)]">
+            <li>
+              Los <strong className="text-[var(--text-1)]">datos de transferencia del anfitrión</strong> (RUT,
+              cuenta, banco, correo y link de pago) se eliminan automáticamente
+              <strong className="text-[var(--text-1)]"> 30 días después</strong> de que la boleta se cierra.
+            </li>
+            <li>
+              Los <strong className="text-[var(--text-1)]">comprobantes</strong> dejan de mostrarse en la app
+              <strong className="text-[var(--text-1)]"> 30 días después</strong> de cerrar la boleta. La
+              eliminación definitiva del archivo en el almacenamiento se está implementando como parte de este
+              mismo plan de retención.
+            </li>
+            <li>
+              El <strong className="text-[var(--text-1)]">historial en este dispositivo</strong> permanece
+              hasta que lo borres tú: puedes hacerlo cuando quieras desde <em>Mis boletas</em> con
+              «Borrar mis datos de este dispositivo».
+            </li>
+          </ul>
+          <p className="text-[var(--text-2)]">
+            También puedes pedir la eliminación antes de los 30 días escribiéndonos (ver más abajo).
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="font-bold text-[var(--text)]">Base legal y consentimiento</h2>
           <p>
-            Los datos de transferencia del anfitrión (RUT, cuenta, banco, correo y link de pago)
-            se eliminan automáticamente <strong className="text-[var(--text-1)]">30 días después</strong> de que
-            la boleta se cierra. Puedes pedir la eliminación antes en cualquier momento.
+            Tratamos estos datos sobre la base de tu <strong className="text-[var(--text-1)]">consentimiento</strong>:
+            los entregas voluntariamente al crear o unirte a una boleta, con el fin concreto de dividir esa
+            cuenta. No usamos los datos para otra cosa. Como no hay cuentas, no recopilamos más de lo necesario
+            para ese propósito.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-bold text-[var(--text)]">Tus derechos</h2>
           <p>
-            Conforme a la ley chilena de protección de datos personales (Ley 19.628 y la
+            Conforme a la ley chilena de protección de datos personales (Ley 19.628, actualizada por la
             Ley 21.719), tienes derecho a <strong className="text-[var(--text-1)]">acceder</strong> a tus
             datos, <strong className="text-[var(--text-1)]">rectificarlos</strong>,{' '}
             <strong className="text-[var(--text-1)]">eliminarlos</strong> y{' '}
-            <strong className="text-[var(--text-1)]">oponerte</strong> a su tratamiento. Para ejercerlos,
-            escribe a{' '}
-            <a href="mailto:benjavsqueza@gmail.com" className="text-[var(--brand-ink)] hover:underline">
-              benjavsqueza@gmail.com
-            </a>{' '}
-            con el link de la sesión.
+            <strong className="text-[var(--text-1)]">oponerte</strong> a su tratamiento. Para los datos de
+            <em> este dispositivo</em> puedes ejercer el borrado tú mismo desde <em>Mis boletas</em>. Para el
+            resto, escríbenos con el link de la boleta y haremos la gestión.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="font-bold text-[var(--text)]">Contacto</h2>
+          <p className="text-[var(--text-2)]">
+            Escribe a{' '}
+            <a href="mailto:privacidad@a-pagar.app" className="text-[var(--brand-ink)] hover:underline">
+              privacidad@a-pagar.app
+            </a>
+            . (Dirección de contacto configurable: reemplázala por el correo real del responsable antes de
+            publicar.)
           </p>
         </section>
       </article>
