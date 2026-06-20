@@ -65,10 +65,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#faf2e7' },
-    { media: '(prefers-color-scheme: dark)', color: '#17120f' },
-  ],
+  themeColor: '#faf2e7',
   width: 'device-width',
   initialScale: 1,
   // Necesario para que env(safe-area-inset-*) tenga valores reales en PWA
