@@ -10,6 +10,7 @@ import { ItemsClaimList } from '@/components/session/items-claim-list'
 import { computeParticipantSummary, formatCLP, generateSessionLink, copyToClipboard } from '@/lib/utils'
 import { computeHostCollection } from '@/lib/billing'
 import { saveLocalSession } from '@/lib/local-sessions'
+import { trackEvent } from '@/lib/analytics'
 import { toast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -94,6 +95,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
     }
 
     toast('Pago confirmado ✓')
+    trackEvent('payment_confirmed')
 
     // Send push to participant
     const participant = participants.find(p => p.id === participantId)
@@ -127,6 +129,7 @@ export default function HostPage({ params }: { params: Promise<{ id: string }> }
       return
     }
     toast('Boleta cerrada ✓')
+    trackEvent('session_closed')
   }
 
   const handleShareWhatsApp = () => {
