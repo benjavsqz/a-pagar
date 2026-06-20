@@ -1,0 +1,76 @@
+-- 015: Carrera de "tomar la misma unidad" en ítems multi-unidad — ANÁLISIS.
+-- Ejecutar en Supabase SQL Editor DESPUÉS de la 014.
+-- (NOTA: en este repo la última migración aplicada es la 013; si no existe una
+--  014 intermedia en tu entorno, ejecutar esta DESPUÉS de la 013.)
+--
+-- ⚠️ Solo cambios SEGUROS aquí + probar en staging. Esta migración NO agrega una
+--    constraint nueva sobre `claims` a propósito (ver "POR QUÉ NO" abajo).
+--
+-- ============================================================
+-- EL PROBLEMA (carrera de claim concurrente)
+-- ============================================================
+-- Un ítem de "cantidad N" se modela como N filas separadas en `items` (una por
+-- unidad física). En la UI (items-claim-list.tsx), "tomar una unidad" hace:
+--   1. lee los claims actuales,
+--   2. elige la PRIMERA unidad sin ningún claim (un item_id "libre"),
+--   3. inserta un claim sobre ESE item_id.
+--
+-- Si dos invitados tocan "+1" casi a la vez, ambos leen la MISMA unidad como
+-- libre (paso 2) y ambos insertan un claim sobre el mismo item_id (paso 3).
+-- La unique de la 001 es unique(item_id, participant_id): solo impide que el
+-- MISMO participante reclame dos veces la misma unidad — NO impide que dos
+-- participantes DISTINTOS reclamen la misma unidad. Resultado: esa unidad física
+-- queda "compartida ÷2" en silencio, en vez de una-para-cada-uno, y queda otra
+-- unidad libre sin tomar. El subtotal global sigue cuadrando (computeParticipant-
+-- Summary reparte ceil(price / claims_de_la_unidad)), pero el reparto entre las
+-- dos personas es injusto: pagan media unidad cada una en vez de una entera.
+--
+-- ============================================================
+-- POR QUÉ NO una constraint/RPC que lo "arregle" en la DB
+-- ============================================================
+-- La tentación es unique(item_id) en claims (una unidad → un solo dueño). Eso
+-- ROMPE la feature legítima de "Dividir un ítem ÷N": un ítem simple (botella de
+-- vino, postre para compartir) se reparte poniendo VARIOS claims sobre el MISMO
+-- item_id a propósito. A nivel de base de datos NO existe forma de distinguir:
+--   • "una unidad física de un ítem ×N que debe ser exclusiva", de
+--   • "un ítem simple que se está compartiendo ÷N a propósito".
+-- Ambos son, literalmente, filas de `items` con varios claims. La distinción vive
+-- solo en la UI (agrupa por nombre; units.length > 1 ⇒ multi-unidad con steppers;
+-- units.length == 1 ⇒ ítem simple con botón "Dividir"). No hay columna tipo
+-- `quantity`/`exclusive` que un trigger pueda mirar. Añadir una constraint ciega
+-- haría correcto el caso multi-unidad a costa de romper el compartir ÷N — peor
+-- el remedio que la enfermedad.
+--
+-- Forzar un guard requeriría un cambio de modelo de datos (p.ej. un ítem con
+-- columna `quantity` + tabla de "unidades" con claim único por unidad, o un flag
+-- `shareable`) y reescribir la UI de claim. Eso excede "hardening, no rewrite" y
+-- toca componentes/páginas que están fuera de alcance. Correctness over
+-- cleverness: documentamos la carrera y NO metemos una constraint que rompe una
+-- feature buena.
+--
+-- ============================================================
+-- MITIGACIÓN ACTUAL (sin tocar el esquema)
+-- ============================================================
+-- 1. La ventana de carrera es estrecha y AUTOSANABLE: tras cualquier claim, quien
+--    escribe emite un broadcast "sync" y todos recargan (use-session.ts). En
+--    cuanto el segundo cliente recibe el estado fresco, ve la unidad ya tomada y
+--    su próximo "+1" elige OTRA unidad libre. El daño se limita a la única unidad
+--    que se solapó, y solo si ambos taps caen dentro de la misma ronda de red.
+-- 2. El reparto global del total NUNCA se descuadra (el sobre-cobro de la 011-C y
+--    el amount servidor de la 011-D/012 siguen vigentes); el único efecto es el
+--    reparto "÷2 vs uno-cada-uno" de esa unidad, que las personas en la mesa ven
+--    en vivo (los mini-avatares por unidad) y pueden corregir con un toque
+--    (quitar/volver a tomar).
+--
+-- ============================================================
+-- MEJORA SEGURA OPCIONAL (a nivel cliente, fuera de esta migración)
+-- ============================================================
+-- Si se quisiera cerrar la ventana sin cambiar el modelo: reconciliación
+-- optimista en addClaim — tras el INSERT, releer los claims de ese item_id y, si
+-- aparecen ≥2 participantes en una unidad que la UI trataba como exclusiva
+-- (multi-unidad), soltar el claim propio y reintentar sobre la siguiente unidad
+-- libre. Es un parche de cliente (no una garantía), por eso NO se implementa como
+-- guard de DB aquí; queda anotado como la vía pragmática si el solape resultara
+-- molesto en producción.
+--
+-- (Sin DDL: esta migración es deliberadamente solo análisis.)
