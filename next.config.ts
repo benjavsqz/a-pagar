@@ -27,7 +27,9 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://va.vercel-scripts.com",
+      // *.sentry.io / *.ingest.sentry.io: ingest de Sentry (solo se usa cuando
+      // hay DSN configurado; inofensivo si Sentry está deshabilitado).
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://va.vercel-scripts.com https://*.sentry.io https://*.ingest.sentry.io",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

@@ -7,6 +7,7 @@ import { ParticipantsLegend } from '@/components/session/presence-bubbles'
 import { LogoMark } from '@/components/brand/logo-mark'
 import { computeParticipantSummary, formatCLP, copyToClipboard } from '@/lib/utils'
 import { saveLocalSession, getLocalSession } from '@/lib/local-sessions'
+import { trackEvent } from '@/lib/analytics'
 import type { Participant } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/ui/toast'
@@ -159,6 +160,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         participantName: participant.name,
       })
 
+      trackEvent('participant_joined')
       setStep(isEqual ? 'transfer' : 'items')
       setCreating(false)
     }
@@ -363,6 +365,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         }, { onConflict: 'session_id,participant_id' })
         if (payError) throw payError
         notifyChange() // refresca al host en vivo
+        trackEvent('payment_submitted', { withComprobante: true })
         toast('Comprobante enviado ✓')
         // Notify host
         fetch('/api/push/send', {
@@ -400,6 +403,7 @@ export default function ParticipantPage({ params }: { params: Promise<{ id: stri
         }, { onConflict: 'session_id,participant_id' })
         if (payError) throw payError
         notifyChange() // refresca al host en vivo
+        trackEvent('payment_submitted', { withComprobante: false })
         // Notify host
         fetch('/api/push/send', {
           method: 'POST',

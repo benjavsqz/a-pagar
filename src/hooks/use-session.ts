@@ -61,6 +61,10 @@ export function useSession(sessionId: string) {
     load()
     const supabase = createClient()
 
+    // Bandera de desmontaje: tras el cleanup ningún callback async (backoff,
+    // resubscribe) debe seguir tocando el canal ni reprogramar timers.
+    let disposed = false
+
     // Broadcast (no postgres_changes): cada cliente que cambia algo emite "sync"
     // y los demás recargan. self:false → quien emite no se recarga a sí mismo.
     // Debounce: si llegan varios "sync" seguidos (mesa activa), coalescemos en
@@ -70,9 +74,49 @@ export function useSession(sessionId: string) {
       if (syncTimer) return
       syncTimer = setTimeout(() => { syncTimer = null; load() }, 600)
     }
-    const channel = supabase.channel(`rt:${sessionId}`, { config: { broadcast: { self: false } } })
-    channel.on('broadcast', { event: 'sync' }, debouncedLoad).subscribe()
-    channelRef.current = channel
+
+    // Reconexión con backoff acotado: los teléfonos en restaurantes pierden
+    // conectividad constantemente y el websocket cae (CHANNEL_ERROR / TIMED_OUT /
+    // CLOSED). Reintentamos con espera creciente y, al reconectar, hacemos UN
+    // load() para recuperar lo que se haya perdido durante la caída.
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+    let attempt = 0
+    const MAX_BACKOFF = 30000 // 30 s tope
+
+    // Canal vigente: lo removemos antes de resuscribir para no acumular canales
+    // zombis ni duplicar suscripciones tras varias reconexiones.
+    let channel: RealtimeChannel | null = null
+
+    const subscribe = () => {
+      if (disposed) return
+      if (channel) supabase.removeChannel(channel)
+
+      channel = supabase.channel(`rt:${sessionId}`, { config: { broadcast: { self: false } } })
+      channelRef.current = channel
+      channel
+        .on('broadcast', { event: 'sync' }, debouncedLoad)
+        .subscribe(status => {
+          if (disposed) return
+          if (status === 'SUBSCRIBED') {
+            // Conexión (re)establecida. Si veníamos de una caída (attempt > 0),
+            // refrescamos UNA vez para no perder cambios ocurridos mientras el
+            // canal estaba abajo. El diff en load() evita re-render si nada cambió.
+            if (attempt > 0) load()
+            attempt = 0
+            return
+          }
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            // Backoff exponencial acotado con jitter (evita reconexión en manada
+            // si varios teléfonos recuperan red a la vez). Un solo timer en vuelo.
+            if (retryTimer) return
+            const base = Math.min(1000 * 2 ** attempt, MAX_BACKOFF)
+            const delay = base / 2 + Math.random() * (base / 2)
+            attempt++
+            retryTimer = setTimeout(() => { retryTimer = null; subscribe() }, delay)
+          }
+        })
+    }
+    subscribe()
 
     // Red de seguridad: el broadcast es "fire-and-forget" y se pierde si el
     // websocket se suspende (pestaña en segundo plano / pantalla apagada en
@@ -85,9 +129,11 @@ export function useSession(sessionId: string) {
     const poll = setInterval(refresh, 15000)
 
     return () => {
+      disposed = true
       channelRef.current = null
       if (syncTimer) clearTimeout(syncTimer)
-      supabase.removeChannel(channel)
+      if (retryTimer) clearTimeout(retryTimer)
+      if (channel) supabase.removeChannel(channel)
       document.removeEventListener('visibilitychange', refresh)
       window.removeEventListener('focus', refresh)
       clearInterval(poll)

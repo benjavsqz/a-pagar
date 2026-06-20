@@ -7,12 +7,19 @@ import { formatCLP } from '@/lib/utils'
 import { computeHostCollection } from '@/lib/billing'
 import { getLocalSessions, type LocalSessionEntry } from '@/lib/local-sessions'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { LogoMark } from '@/components/brand/logo-mark'
 import {
   ChevronLeft, Plus, Loader2, Utensils, CheckCircle2,
-  Clock, Users, ArrowUpRight, TrendingUp, Share2,
+  Clock, Users, ArrowUpRight, TrendingUp, Share2, Trash2,
 } from 'lucide-react'
 import type { Session, Item, Participant, Payment, Claim } from '@/types'
+
+// Claves de localStorage que usa la app en este dispositivo. Borrarlas elimina el
+// historial local y, si eres anfitrión, el token para gestionar boletas (vive solo
+// aquí). No afecta los datos en Supabase. Ver src/lib/local-sessions.ts (apagar_sessions_v2)
+// y src/components/pwa-install-banner.tsx (apagar_pwa_dismissed).
+const LOCAL_KEYS = ['apagar_sessions_v2', 'apagar_pwa_dismissed'] as const
 
 // ── Enriched session data ────────────────────────────────────────────────────
 
@@ -33,6 +40,13 @@ export default function CuentaPage() {
   const router = useRouter()
   const [cards, setCards] = useState<SessionCard[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmWipe, setConfirmWipe] = useState(false)
+
+  const wipeLocalData = () => {
+    for (const key of LOCAL_KEYS) localStorage.removeItem(key)
+    setCards([])
+    setConfirmWipe(false)
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -201,6 +215,34 @@ export default function CuentaPage() {
           )}
         </div>
       )}
+
+      {/* Borrar datos de este dispositivo — derecho real, solo afecta localStorage */}
+      {!loading && (
+        <div className="mt-10 pt-6 border-t border-[var(--line)] text-center">
+          <button
+            onClick={() => setConfirmWipe(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-[var(--text-2)] hover:text-[var(--text)] transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Borrar mis datos de este dispositivo
+          </button>
+          <p className="text-[11px] text-[var(--text-2)] mt-2 max-w-[260px] mx-auto leading-relaxed">
+            Solo borra el historial guardado en este navegador. Las boletas en sí no se eliminan.{' '}
+            <Link href="/privacidad" className="text-[var(--brand-ink)] hover:underline">Más sobre privacidad</Link>.
+          </p>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={confirmWipe}
+        title="¿Borrar datos de este dispositivo?"
+        description="Se borrará el historial de boletas guardado en este navegador. Si eres anfitrión, perderás el acceso para confirmar pagos o cerrar tus boletas desde este dispositivo. Esto no se puede deshacer."
+        confirmLabel="Borrar"
+        cancelLabel="Cancelar"
+        tone="danger"
+        onConfirm={wipeLocalData}
+        onCancel={() => setConfirmWipe(false)}
+      />
 
       {/* Floating + button */}
       <Link href="/crear" className="fixed bottom-6 right-4 z-50">
