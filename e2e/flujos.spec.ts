@@ -23,6 +23,8 @@ test('flujo por ítems: crear → unirse → marcar → pagar → confirmar → 
   await host.getByPlaceholder('0').first().fill('12000')
   await host.getByRole('button', { name: /^Continuar/ }).click()
   await host.getByLabel(/Tu nombre/).fill('Host E2E')
+  // Obligatorio: cómo te transfieren (banco + cuenta, o link de pago).
+  await host.getByLabel(/Link de pago/).fill('mach.cl')
   await host.getByRole('button', { name: /Generar link para compartir/ }).click()
 
   await host.waitForURL(/\/host\/[0-9a-f-]{36}/, { timeout: 20_000 })
@@ -39,8 +41,8 @@ test('flujo por ítems: crear → unirse → marcar → pagar → confirmar → 
   await guest.getByLabel(/¿Cómo te llamas\?/).fill('Invitado E2E')
   await guest.getByRole('button', { name: /^Entrar/ }).click()
 
-  // Marca el ítem "Pizza"
-  await guest.getByRole('button', { name: /Pizza/ }).first().click()
+  // Marca el ítem "Pizza" (el toggle del ítem es role="checkbox", a11y)
+  await guest.getByRole('checkbox', { name: /Pizza/ }).first().click()
 
   // Avanza a transferir y marca como pagado sin comprobante
   await guest.getByRole('button', { name: /Ver cómo transferir/ }).click()
@@ -82,6 +84,7 @@ test('host marca lo que consumió: sección "Lo que consumí yo" funciona', asyn
   await host.getByPlaceholder('0').first().fill('12000')
   await host.getByRole('button', { name: /^Continuar/ }).click()
   await host.getByLabel(/Tu nombre/).fill('Host Consumo E2E')
+  await host.getByLabel(/Link de pago/).fill('mach.cl')
   await host.getByRole('button', { name: /Generar link para compartir/ }).click()
   await host.waitForURL(/\/host\/[0-9a-f-]{36}/, { timeout: 20_000 })
 
@@ -91,8 +94,8 @@ test('host marca lo que consumió: sección "Lo que consumí yo" funciona', asyn
   await expect(seccion).toBeVisible({ timeout: 15_000 })
   await seccion.click()
 
-  // El host marca la Pizza como suya
-  await host.getByRole('button', { name: /Pizza/ }).first().click()
+  // El host marca la Pizza como suya (toggle role="checkbox")
+  await host.getByRole('checkbox', { name: /Pizza/ }).first().click()
 
   // El subtítulo refleja su consumo y que NO se le cobra
   await expect(host.getByText(/no se te cobra/i)).toBeVisible({ timeout: 15_000 })
@@ -112,6 +115,7 @@ test('flujo partes iguales: crear → unirse → ver monto a pagar', async ({ br
   await host.getByPlaceholder('2').first().fill('3')        // personas
   await host.getByRole('button', { name: /^Continuar/ }).click()
   await host.getByLabel(/Tu nombre/).fill('Host Equal E2E')
+  await host.getByLabel(/Link de pago/).fill('mach.cl')
   await host.getByRole('button', { name: /Generar link/ }).click()
 
   await host.waitForURL(/\/host\/[0-9a-f-]{36}/, { timeout: 20_000 })
